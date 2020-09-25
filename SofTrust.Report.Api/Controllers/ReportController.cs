@@ -4,17 +4,18 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
+    using SofTrust.Report.Api.Service.Report;
     using SofTrust.Report.Business.Service.Report;
 
     [Route("api/reports")]
     [ApiController]
     public class ReportController : ControllerBase
     {
-        private readonly IReportService reportService;
+        private readonly IReportServiceFactory reportServiceFactory;
 
-        public ReportController(IReportService reportService)
+        public ReportController(IReportServiceFactory reportServiceFactory)
         {
-            this.reportService = reportService;
+            this.reportServiceFactory = reportServiceFactory;
         }
 
         // GET api/values
@@ -51,19 +52,14 @@
 
         [HttpPost("run")]
         public IActionResult Run(
-            [FromForm(Name = "parameters")] string parametersJson,
-            [FromForm(Name = "dataSources")] string dataSourcesJson,
-            [FromForm(Name = "dataSets")] string dataSetsJson,
-            [FromForm(Name = "templateType")] string templatetype,
-            [FromForm(Name = "template")] IFormFile template)
+            [FromForm(Name = "report")] string reportJson,
+            [FromForm(Name = "templateData")] IFormFile template)
         {
-            var parameters = JArray.Parse(parametersJson);
-            var dataSources = JArray.Parse(dataSourcesJson);
-            var dataSets = JArray.Parse(dataSetsJson);
+            var report = JToken.Parse(reportJson);
 
-            var formedReport = reportService.Run(templatetype, template, parameters, dataSources, dataSets);
-
-            return File(formedReport, "application/octet-stream", "response.xlsx");
+            var reportService = this.reportServiceFactory.Create(report["type"].ToString());
+            
+            return reportService.Run(report, template);
         }
     }
 }

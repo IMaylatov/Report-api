@@ -12,7 +12,7 @@
             {
                 if (dataSetType == DATASET_TYPE_SQLQUERY)
                 {
-                    return new ClosedXmlSqlQueryAdapter();
+                    return new EmptyDataSetAdapter();
                 }
             }
             return null;

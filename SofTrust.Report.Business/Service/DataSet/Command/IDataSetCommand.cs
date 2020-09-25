@@ -3,9 +3,10 @@
     using SofTrust.Report.Business.Service.DataAdapter;
     using SofTrust.Report.Business.Service.DataSource.Command;
     using System.Collections.Generic;
+    using SofTrust.Report.Business.Model;
 
     public interface IDataSetCommand
     {
-        object Execute(Dictionary<string, string> parameters, Dictionary<string, IDataSourceCommand> dataSources, IDataSetAdapter dataSetAdapter);
+        object Execute(IEnumerable<Parameter> parameters, Dictionary<string, IDataSourceCommand> dataSources, IDataSetAdapter dataSetAdapter);
     }
 }

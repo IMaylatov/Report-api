@@ -2,7 +2,7 @@
 {
     using ClosedXML.Report;
     using Microsoft.AspNetCore.Http;
-    using SofTrust.Report.Business.Service.DataAdapter;
+    using SofTrust.Report.Business.Model;
     using System.Collections.Generic;
     using System.IO;
 
@@ -15,7 +15,7 @@
             this.templateFile = templateFile;
         }
 
-        public Stream Execute(Dictionary<string, string> parameters, object datas)
+        public Stream Execute(IEnumerable<Parameter> parameters, object datas)
         {
             using (var templateStream = this.templateFile.OpenReadStream())
             {

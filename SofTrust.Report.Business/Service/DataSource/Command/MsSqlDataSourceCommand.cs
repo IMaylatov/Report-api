@@ -27,7 +27,12 @@
                     var data = new Dictionary<string, object>();
                     for (int i = 0; i < reader.FieldCount; i++)
                     {
-                        data.Add(reader.GetName(i), reader.GetValue(i));
+                        var fieldName = reader.GetName(i);
+                        if (string.IsNullOrWhiteSpace(fieldName))
+                        {
+                            fieldName = $"a{i}";
+                        }
+                        data.Add(data.ContainsKey(fieldName) ? $"{fieldName}{i}" : fieldName, reader.GetValue(i));
                     }
                     datas.Add(data);
                 }
