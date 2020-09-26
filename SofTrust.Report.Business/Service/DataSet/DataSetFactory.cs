@@ -1,28 +1,31 @@
 ﻿namespace SofTrust.Report.Business.Service.DataSet
 {
     using Newtonsoft.Json.Linq;
-    using SofTrust.Report.Business.Service.DataSet.Command;
+    using SofTrust.Report.Business.Service.DataSource;
+    using System.Collections.Generic;
+    using System.Linq;
 
-    public class DataSetFactory : IDataSetFactory
+    public class DataSetFactory
     {
         private const string DATASET_TYPE_SQLQUERY = "SqlQuery";
 
-        public IDataSetCommand Create(JToken dataSet)
+        public IDataSet Create(JToken dataSetJ, IEnumerable<IDataSource> dataSources)
         {
-            IDataSetCommand dataSetCommand = null;
-            switch (dataSet["type"].ToString())
+            IDataSet dataSet = null;
+            switch (dataSetJ["type"].ToString())
             {
                 case DATASET_TYPE_SQLQUERY:
                     {
-                        var dataSourceName = dataSet["data"]["dataSourceName"].ToString();
-                        var query = dataSet["data"]["query"].ToString();
-                        dataSetCommand = new SqlQueryDataSetCommand(dataSourceName, query);
+                        var name = dataSetJ["name"].ToString();
+                        var dataSourceName = dataSetJ["data"]["dataSourceName"].ToString();
+                        var query = dataSetJ["data"]["query"].ToString();
+                        dataSet = new SqlQueryDataSet(dataSources.FirstOrDefault(x => x.Name == dataSourceName) , query) { Name = name };
                     }
                     break;
                 default:
                     break;
             }
-            return dataSetCommand;
+            return dataSet;
         }
     }
 }

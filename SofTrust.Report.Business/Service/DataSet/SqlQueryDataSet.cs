@@ -1,33 +1,35 @@
-﻿namespace SofTrust.Report.Business.Service.DataSet.Command
+﻿namespace SofTrust.Report.Business.Service.DataSet
 {
-    using SofTrust.Report.Business.Service.DataAdapter;
-    using SofTrust.Report.Business.Service.DataSource.Command;
     using System.Collections.Generic;
     using SofTrust.Report.Business.Model;
     using System.Text.RegularExpressions;
     using System.Linq;
     using Newtonsoft.Json.Linq;
+    using SofTrust.Report.Business.Service.DataSet.Reader;
+    using SofTrust.Report.Business.Service.DataSource;
 
-    public class SqlQueryDataSetCommand : IDataSetCommand
+    public class SqlQueryDataSet : IDataSet
     {
         private const string PREFIX_DOCUMENT_PARAMETER = "@document";
 
-        private readonly string dataSourceName;
+        private readonly IDataSource dataSource;
         private readonly string query;
 
-        public SqlQueryDataSetCommand(string dataSourceName, string query)
+        public string Name { get; set; }
+
+        public SqlQueryDataSet(IDataSource dataSource, string query)
         {
-            this.dataSourceName = dataSourceName;
+            this.dataSource = dataSource;
             this.query = query;
         }
 
-        public object Execute(IEnumerable<Parameter> parameters, Dictionary<string, IDataSourceCommand> dataSources, IDataSetAdapter dataSetAdapter)
+        public IDataSetReader ExecuteReader(IEnumerable<Parameter> parameters)
         {
+            var dataSourceConnection = this.dataSource.CreateConnection();
             var sqlQuery = ReplaceParameters(query, parameters);
-
-            var data = dataSources[dataSourceName].Execute(sqlQuery);
-
-            return dataSetAdapter.Adapt(data);
+            var command = dataSourceConnection.CreateCommand(sqlQuery);
+            command.Connection.Open();
+            return command.ExecuteReader();
         }
 
         private string ReplaceParameters(string query, IEnumerable<Parameter> parameters)

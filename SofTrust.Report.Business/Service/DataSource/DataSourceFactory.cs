@@ -1,23 +1,22 @@
 ﻿namespace SofTrust.Report.Business.Service.DataSource
 {
     using Newtonsoft.Json.Linq;
-    using SofTrust.Report.Business.Service.DataSource.Command;
 
-    public class DataSourceFactory : IDataSourceFactory
+    public class DataSourceFactory
     {
         const string DATASOURCE_TYPE_MSSQL = "MsSql";
         const string DATASOURCE_TYPE_POSTGRESQL = "PostgreSql";
 
-        public IDataSourceCommand Create(JToken dataSource)
+        public IDataSource Create(JToken dataSource)
         {
-            IDataSourceCommand source = null;
+            IDataSource source = null;
             switch (dataSource["type"].ToString())
             {
                 case DATASOURCE_TYPE_MSSQL:
-                    source = new MsSqlDataSourceCommand(dataSource["data"]["connectionString"].ToString());
+                    source = new MsSqlDataSource(dataSource["data"]["connectionString"].ToString()) { Name = dataSource["name"].ToString() };
                     break;
                 case DATASOURCE_TYPE_POSTGRESQL:
-                    source = new NpgsqlDataSourceCommand(dataSource["data"]["connectionString"].ToString());
+                    source = new NpgsqlDataSource(dataSource["data"]["connectionString"].ToString()) { Name = dataSource["name"].ToString() };
                     break;
                 default:
                     break;

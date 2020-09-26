@@ -10,12 +10,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SofTrust.Report.Api.Service.Report;
-using SofTrust.Report.Business.Service.DataAdapter.Factory;
 using SofTrust.Report.Business.Service.DataSet;
 using SofTrust.Report.Business.Service.DataSource;
 using SofTrust.Report.Business.Service.Report;
-using SofTrust.Report.Business.Service.Template;
 
 namespace SofTrust.Report.Api
 {
@@ -35,15 +32,13 @@ namespace SofTrust.Report.Api
         {
             services.AddMvc(options => options.EnableEndpointRouting = false);
 
-            services.AddScoped<IReportServiceFactory, ReportServiceFactory>();
+            services.AddScoped<ReportGeneratorFactory, ReportGeneratorFactory>();
 
-            services.AddScoped<ClosedXmlReportService, ClosedXmlReportService>();
-            services.AddScoped<MalibuReportService, MalibuReportService>();
+            services.AddScoped<ClosedXmlReportGenerator, ClosedXmlReportGenerator>();
+            services.AddScoped<MalibuReportGenerator, MalibuReportGenerator>();
 
-            services.AddScoped<IDataSourceFactory, DataSourceFactory>();
-            services.AddScoped<IDataSetFactory, DataSetFactory>();
-            services.AddScoped<IDataSetAdapterFactory, DataSetAdapterFactory>();
-            services.AddScoped<ITemplateFactory, TemplateFactory>();
+            services.AddScoped<DataSourceFactory, DataSourceFactory>();
+            services.AddScoped<DataSetFactory, DataSetFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

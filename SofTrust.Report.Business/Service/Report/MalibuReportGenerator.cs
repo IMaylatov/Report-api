@@ -7,27 +7,25 @@
     using System.Xml.Serialization;
     using ClosedXML.Excel;
     using ClosedXML.Report;
-    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
     using SofTrust.Report.Business.Model;
     using SofTrust.Report.Business.Model.Malibu;
-    using SofTrust.Report.Business.Service.DataAdapter;
-    using SofTrust.Report.Business.Service.DataSet.Command;
-    using SofTrust.Report.Business.Service.DataSource.Command;
+    using SofTrust.Report.Business.Service.DataSet;
+    using SofTrust.Report.Business.Service.DataSource;
 
-    public class MalibuReportService : IReportService
+    public class MalibuReportGenerator : IReportGenerator
     {
         private const string DEFAULT_DATASOURCE_NAME = "DataSource";
 
-        private ClosedXmlReportService closedXmlReportService;
+        private ClosedXmlReportGenerator closedXmlReportService;
 
-        public MalibuReportService(ClosedXmlReportService closedXmlReportService)
+        public MalibuReportGenerator(ClosedXmlReportGenerator closedXmlReportService)
         {
             this.closedXmlReportService = closedXmlReportService;
         }
 
-        public FileStreamResult Run(JToken jReport, IFormFile template)
+        public FileStreamResult Generate(JToken jReport, Stream template)
         {
             var parameters = jReport["parameters"]
                 .Select(x => new Parameter { Name = x["name"].ToString().ToLower(), Kind = x["kind"].ToString(), Value = x["value"] });
@@ -36,36 +34,49 @@
             var reportDesc = report.DeserializeReportDesc();
             var reportTemplateBook = report.DeserializeReportTemplate();
 
-            var dataSources = new Dictionary<string, IDataSourceCommand>()
+            var dataSources = new List<IDataSource>()
             {
-                { DEFAULT_DATASOURCE_NAME, new MsSqlDataSourceCommand(jReport["connection"]["connectionString"].ToString()) }
+                new MsSqlDataSource(jReport["connection"]["connectionString"].ToString()) { Name = DEFAULT_DATASOURCE_NAME }
             };
 
             var dataSets = reportDesc.DATASET
-                .ToDictionary(x => x.NAME.ToLower(), x => new SqlQueryDataSetCommand(DEFAULT_DATASOURCE_NAME, x.SQL));
-
-            var dataSetAdapters = dataSets
-                .ToDictionary(x => x.Key.ToLower(), x => new EmptyDataSetAdapter());
+                .Select(x => new SqlQueryDataSet(dataSources.FirstOrDefault(), x.SQL) { Name = x.NAME });
 
             var datas = dataSets
-                .ToDictionary(x => x.Key.ToLower(), x => x.Value.Execute(parameters, dataSources, dataSetAdapters[x.Key.ToLower()]));
+               .ToDictionary(x => x.Name.ToLower(), x =>
+               {
+                   var reader = x.ExecuteReader(parameters);
+                   var datas = new List<Dictionary<string, object>>();
+                   while (reader.Read())
+                   {
+                       var data = new Dictionary<string, object>();
+                       for (int i = 0; i < reader.FieldCount; i++)
+                       {
+                           var fieldName = reader.GetName(i);
+                           if (string.IsNullOrWhiteSpace(fieldName))
+                           {
+                               fieldName = $"a{i}";
+                           }
+                           data.Add(data.ContainsKey(fieldName) ? $"{fieldName}{i}" : fieldName, reader.GetValue(i));
+                       }
+                       datas.Add(data);
+                   }
+
+                   return datas;
+               });
 
             var reportStream = GenerateReport(parameters, datas, reportTemplateBook);
 
             return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
         }
 
-        private Report GetReport(IFormFile template)
+        private Report GetReport(Stream template)
         {
-            using (var fileStream = template.OpenReadStream())
-            {
-                fileStream.Position = 0;
-                var serializer = new XmlSerializer(typeof(Report));
-                return serializer.Deserialize(fileStream) as Report;
-            }
+            var serializer = new XmlSerializer(typeof(Report));
+            return serializer.Deserialize(template) as Report;
         }
 
-        private Stream GenerateReport(IEnumerable<Parameter> parameters, Dictionary<string, object> datas, XLWorkbook book)
+        private Stream GenerateReport(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book)
         {
             var documentParameter = this.GetDocumentParameter(parameters);
 

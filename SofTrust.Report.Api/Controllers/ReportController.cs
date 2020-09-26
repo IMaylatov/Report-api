@@ -4,18 +4,17 @@
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
-    using SofTrust.Report.Api.Service.Report;
     using SofTrust.Report.Business.Service.Report;
 
     [Route("api/reports")]
     [ApiController]
     public class ReportController : ControllerBase
     {
-        private readonly IReportServiceFactory reportServiceFactory;
+        private readonly ReportGeneratorFactory reportGeneratorFactory;
 
-        public ReportController(IReportServiceFactory reportServiceFactory)
+        public ReportController(ReportGeneratorFactory reportGeneratorFactory)
         {
-            this.reportServiceFactory = reportServiceFactory;
+            this.reportGeneratorFactory = reportGeneratorFactory;
         }
 
         // GET api/values
@@ -57,9 +56,12 @@
         {
             var report = JToken.Parse(reportJson);
 
-            var reportService = this.reportServiceFactory.Create(report["type"].ToString());
-            
-            return reportService.Run(report, template);
+            var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
+                        
+            using(var templateStream = template.OpenReadStream())
+            {
+                return reportGenerator.Generate(report, templateStream);
+            }
         }
     }
 }

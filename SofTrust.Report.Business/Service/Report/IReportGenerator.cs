@@ -1,11 +1,11 @@
 ﻿namespace SofTrust.Report.Business.Service.Report
 {
-    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
+    using System.IO;
 
-    public interface IReportService
+    public interface IReportGenerator
     {
-        FileStreamResult Run(JToken report, IFormFile template);
+        FileStreamResult Generate(JToken report, Stream template);
     }
 }
