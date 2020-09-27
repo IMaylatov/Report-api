@@ -3,15 +3,11 @@
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
     using System.Linq;
-    using SofTrust.Report.Business.Model;
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Service.DataSet;
     using System.IO;
-    using MoreLinq;
-    using System.Collections.Generic;
-    using ClosedXML.Report;
 
-    public class ClosedXmlReportGenerator : IReportGenerator
+    public class ClosedXmlReportGenerator : XlsxReportGenerator
     {
         private readonly DataSourceFactory dataSourceFactory;
         private readonly DataSetFactory dataSetFactory;
@@ -23,49 +19,19 @@
             this.dataSetFactory = dataSetFactory;
         }
 
-        public FileStreamResult Generate(JToken jReport, Stream templateStream)
+        public override FileStreamResult Generate(JToken jReport, Stream bookStream)
         {
-            var parameters = jReport["parameters"]
-                .Select(x => new Parameter { Name = x["name"].ToString(), Kind = x["kind"].ToString(), Value = x["value"] });
+            var parameters = this.GetParameters(jReport["parameters"]);
 
             var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x));
 
-            var dataSets = jReport["dataSets"].Select(x => dataSetFactory.Create(x, dataSources));
+            var dataSets = jReport["dataSets"].Select(x => dataSetFactory.Create(x, dataSources, parameters));
 
-            var datas = dataSets
-                .ToDictionary(x => x.Name, x =>
-                {
-                    var reader = x.ExecuteReader(parameters);
-                    var datas = new List<Dictionary<string, object>>();
-                    while (reader.Read())
-                    {
-                        var data = new Dictionary<string, object>();
-                        for (int i = 0; i < reader.FieldCount; i++)
-                        {
-                            var fieldName = reader.GetName(i);
-                            if (string.IsNullOrWhiteSpace(fieldName))
-                            {
-                                fieldName = $"a{i}";
-                            }
-                            data.Add(data.ContainsKey(fieldName) ? $"{fieldName}{i}" : fieldName, reader.GetValue(i));
-                        }
-                        datas.Add(data);
-                    }
+            var datas = this.GetDatas(dataSets);
 
-                    return datas;
-                });
+            var reportStream = this.GenerateClosedXmlReport(bookStream, datas);
 
-            var template = new XLTemplate(templateStream);
-
-            template.AddVariable(datas);
-
-            template.Generate();
-
-            var reportStream = new MemoryStream();
-            template.SaveAs(reportStream);
-            reportStream.Position = 0;
-
-            return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
+            return this.GetXlsxFileStreamResult(reportStream);
         }
     }
 }

@@ -7,6 +7,6 @@
     public interface IDataSet
     {
         public string Name { get; set; }
-        IDataSetReader ExecuteReader(IEnumerable<Parameter> parameters);
+        IDataSetReader ExecuteReader();
     }
 }
