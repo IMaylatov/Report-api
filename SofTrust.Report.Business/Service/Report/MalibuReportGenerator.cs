@@ -85,7 +85,10 @@
                 if (commentMatch.Success)
                 {
                     var dataName = commentMatch.Groups[1].Value.ToLower();
-                    this.WriteTemplateData(cell, dataName, datas[dataName]);
+                    if (datas.ContainsKey(dataName))
+                    {
+                        this.WriteTemplateData(cell, dataName, datas[dataName]);
+                    }
                 }
                 else
                 {
@@ -101,14 +104,14 @@
 
         private void WriteTemplateData(IXLCell cell, string dataName, List<Dictionary<string, object>> data)
         {
-            var startData = cell.Address.ColumnNumber > 1 && cell.CellLeft().GetValue<string>() == DATASET_INDEX_TEMPLATE ? cell.CellLeft().Address : cell.Address;
+            var startData = cell.Worksheet.Cell(cell.Address.RowNumber, 1).Address;
             var dataHeader = data.FirstOrDefault();
             foreach (var column in dataHeader)
             {
                 cell.Value = $"{{{{item.{column.Key}}}}}";
                 cell = cell.CellRight();
             }
-            var endData = cell.CellLeft().Address.ColumnNumber != startData.ColumnNumber ? cell.CellLeft().Address : cell.Address;
+            var endData = cell.Worksheet.Cell(cell.Address.RowNumber + 1, cell.Worksheet.LastColumnUsed().ColumnNumber()).Address;
             cell.Worksheet.Range($"{startData}:{endData}").AddToNamed(dataName);
         }
     } 

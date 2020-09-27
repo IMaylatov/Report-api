@@ -4,6 +4,7 @@
     using SofTrust.Report.Business.Service.DataSet.Reader;
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Model;
+    using MoreLinq;
 
     public class SqlQueryDataSet : IDataSet
     {
@@ -23,22 +24,12 @@
         public IDataSetReader ExecuteReader()
         {
             var dataSourceConnection = this.dataSource.CreateConnection();
-            var sqlQuery = GenerateQuery();
+            var sqlQuery = query;
+            parameters.ForEach(x => sqlQuery = sqlQuery.Replace($"@{x.Name}", $"@{x.Name.Replace(".", "_")}"));
             var command = dataSourceConnection.CreateCommand(sqlQuery);
+            command.AddParameters(parameters);
             command.Connection.Open();
             return command.ExecuteReader();
-        }
-
-        private string GenerateQuery()
-        {
-            var genQuery = query;
-
-            foreach(var parameter in parameters)
-            {
-                genQuery = genQuery.Replace($"@{parameter.Name}", parameter.Value.ToString());
-            }
-
-            return genQuery;
         }
     }
 }

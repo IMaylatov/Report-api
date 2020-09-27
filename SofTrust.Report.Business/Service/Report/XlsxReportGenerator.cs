@@ -21,17 +21,35 @@
                 var parameterName = parameter["name"];
                 if (parameter["value"].Type == JTokenType.Object)
                 {
-                    foreach (JProperty field in parameter["value"])
+                    foreach (JProperty property in parameter["value"])
                     {
-                        parameters.Add(new Parameter { Name = $"{parameterName}.{field.Name}", Value = field.Value });
+                        this.GetParameters(parameterName.ToString(), property, parameters);
                     }
                 }
                 else
                 {
-                    parameters.Add(new Parameter { Name = $"{parameterName}", Value = parameter["value"] });
+                    parameters.Add(new Parameter { Name = parameterName.ToString(), Value = parameter["value"] });
                 }
             }
             return parameters;
+        }
+
+        private void GetParameters(string prefix, JProperty parentProperty, List<Parameter> parameters)
+        {
+            foreach (var property in parentProperty)
+            {
+                if (property.Type == JTokenType.Object)
+                {
+                    foreach (JProperty childProperty in property)
+                    {
+                        this.GetParameters($"{prefix}.{parentProperty.Name}", childProperty, parameters);
+                    }
+                }
+                else
+                {
+                    parameters.Add(new Parameter { Name = $"{prefix}.{parentProperty.Name}", Value = property });
+                }
+            }
         }
 
         protected Dictionary<string, List<Dictionary<string, object>>> GetDatas(IEnumerable<IDataSet> dataSets)
@@ -63,9 +81,9 @@
         protected Stream GenerateClosedXmlReport(Stream bookStream, Dictionary<string, List<Dictionary<string, object>>> datas)
         {
             var template = new XLTemplate(bookStream);
-
+            
             template.AddVariable(datas);
-
+            
             template.Generate();
 
             var reportStream = new MemoryStream();
