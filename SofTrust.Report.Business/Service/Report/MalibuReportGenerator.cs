@@ -111,7 +111,7 @@
                 cell.Value = $"{{{{item.{column.Key}}}}}";
                 cell = cell.CellRight();
             }
-            var endData = cell.Worksheet.Cell(cell.Address.RowNumber + 1, cell.Worksheet.LastColumnUsed().ColumnNumber()).Address;
+            var endData = cell.Worksheet.Cell(data.Count > 1 ? cell.Address.RowNumber + 1 : cell.Address.RowNumber, cell.Worksheet.LastColumnUsed().ColumnNumber()).Address;
             cell.Worksheet.Range($"{startData}:{endData}").AddToNamed(dataName);
         }
     } 
