@@ -6,6 +6,8 @@
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Service.DataSet;
     using System.IO;
+    using System.Collections.Generic;
+    using ClosedXML.Report;
 
     public class ClosedXmlReportGenerator : XlsxReportGenerator
     {
@@ -32,6 +34,21 @@
             var reportStream = this.GenerateClosedXmlReport(bookStream, datas);
 
             return this.GetXlsxFileStreamResult(reportStream);
+        }
+
+        private Stream GenerateClosedXmlReport(Stream bookStream, Dictionary<string, List<Dictionary<string, object>>> datas)
+        {
+            var template = new XLTemplate(bookStream);
+
+            template.AddVariable(datas);
+
+            template.Generate();
+
+            var reportStream = new MemoryStream();
+            template.SaveAs(reportStream);
+            reportStream.Position = 0;
+
+            return reportStream;
         }
     }
 }

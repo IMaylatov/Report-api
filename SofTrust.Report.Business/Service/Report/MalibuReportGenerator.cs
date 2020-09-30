@@ -13,12 +13,16 @@
     using SofTrust.Report.Business.Service.DataSet;
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Model;
+    using Microsoft.AspNetCore.Components.Forms;
+    using System.Diagnostics.CodeAnalysis;
+    using System;
+    using System.Dynamic;
+    using Microsoft.EntityFrameworkCore.Internal;
 
     public class MalibuReportGenerator : XlsxReportGenerator
     {
         private const string DEFAULT_DATASOURCE_NAME = "DataSource";
-
-        private const string DATASET_INDEX_TEMPLATE = "{{index+1}}";
+        private const string DATASET_INDEX = "{{index}}";
 
         private Regex COMMENT_DATASET_NAME_REGEX = new Regex(@"(?i)&&tab\.(\w*)(?-i)");
         private Regex COMMENT_DATASET_RECORDNUMBER_REGEX = new Regex(@"(?i)!--(\w*)\.RecordNumber(?-i)");
@@ -39,9 +43,11 @@
 
             var datas = this.GetDatas(dataSets);
 
-            var closedXmlBookStream = ConvertBookMalibuToClosedXml(parameters, datas, reportBook);
+            FillBookData(parameters, datas, reportBook, reportDesc.DATASET);
 
-            var reportStream = this.GenerateClosedXmlReport(closedXmlBookStream, datas);
+            var reportStream = new MemoryStream();
+            reportBook.SaveAs(reportStream);
+            reportStream.Position = 0;
 
             return this.GetXlsxFileStreamResult(reportStream);
         }
@@ -52,20 +58,15 @@
             return serializer.Deserialize(template) as Report;
         }
 
-        private Stream ConvertBookMalibuToClosedXml(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book)
+        private void FillBookData(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)
         {
             book.Worksheets
                 .ForEach(sheet => sheet.RowsUsed()
                     .ForEach(row => row.CellsUsed()
-                        .ForEach(cell => this.ConvertCellMalibuToClosedXml(cell, parameters, datas))));
-
-            var bookStream = new MemoryStream();
-            book.SaveAs(bookStream);
-            bookStream.Position = 0;
-            return bookStream;
+                        .ForEach(cell => this.ConvertCellMalibuToClosedXml(cell, parameters, datas, dataSetDescs))));
         }
 
-        private void ConvertCellMalibuToClosedXml(IXLCell cell, IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas)
+        private void ConvertCellMalibuToClosedXml(IXLCell cell, IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, MAINDATASET[] dataSetDescs)
         {
             string cellValue;
             if (cell.TryGetValue(out cellValue) && !string.IsNullOrWhiteSpace(cellValue))
@@ -87,32 +88,203 @@
                     var dataName = commentMatch.Groups[1].Value.ToLower();
                     if (datas.ContainsKey(dataName))
                     {
-                        this.WriteTemplateData(cell, dataName, datas[dataName]);
+                        this.WriteTemplateData(cell, datas[dataName], dataSetDescs.FirstOrDefault(x => x.NAME.Contains(dataName, System.StringComparison.InvariantCultureIgnoreCase)));
                     }
                 }
                 else
                 {
-                    commentMatch = COMMENT_DATASET_RECORDNUMBER_REGEX.Match(cell.Comment.Text);
-                    if (commentMatch.Success)
+                    if (COMMENT_DATASET_RECORDNUMBER_REGEX.Match(cell.Comment.Text).Success)
                     {
-                        cell.Value = DATASET_INDEX_TEMPLATE;
+                        cell.Value = DATASET_INDEX;
                     }
                 }
                 cell.Comment.Delete();
             }
         }
 
-        private void WriteTemplateData(IXLCell cell, string dataName, List<Dictionary<string, object>> data)
+        private void WriteTemplateData(IXLCell cell, List<Dictionary<string, object>> datas, MAINDATASET dataSetDesc)
         {
-            var startData = cell.Worksheet.Cell(cell.Address.RowNumber, 1).Address;
-            var dataHeader = data.FirstOrDefault();
-            foreach (var column in dataHeader)
+            if (datas.Count > 1)
             {
-                cell.Value = $"{{{{item.{column.Key}}}}}";
-                cell = cell.CellRight();
+                cell.WorksheetRow().InsertRowsBelow(datas.Count - 1);
             }
-            var endData = cell.Worksheet.Cell(data.Count > 1 ? cell.Address.RowNumber + 1 : cell.Address.RowNumber, cell.Worksheet.LastColumnUsed().ColumnNumber()).Address;
-            cell.Worksheet.Range($"{startData}:{endData}").AddToNamed(dataName);
+            var useRowNumber = cell.Address.ColumnNumber > 1 && cell.CellLeft().Value.ToString() == DATASET_INDEX;
+
+            if (dataSetDesc.GROUP?.Length > 0)
+            {
+                var groups = new MAINDATASETGROUP[]
+                {
+                    new MAINDATASETGROUP()
+                    {
+                        GroupField = "sklad",
+                        FIELD = new MAINDATASETGROUPFIELD[]
+                        {
+                            new MAINDATASETGROUPFIELD() { index="Сумма", function = "cf_Sum" },
+                            new MAINDATASETGROUPFIELD() { index="Кол-во", function = "cf_Sum" }
+                        }
+                    },
+                    new MAINDATASETGROUP()
+                    {
+                        GroupField = "LSFO",
+                        FIELD = new MAINDATASETGROUPFIELD[]
+                        {
+                            new MAINDATASETGROUPFIELD() { index="Сумма", function = "cf_Sum" },
+                            new MAINDATASETGROUPFIELD() { index="Кол-во", function = "cf_Sum" }
+                        }
+                    },
+                    new MAINDATASETGROUP()
+                    {
+                        GroupField = "NUM",
+                        FIELD = new MAINDATASETGROUPFIELD[]
+                        {
+                            new MAINDATASETGROUPFIELD() { index="Сумма", function = "cf_Sum" },
+                            new MAINDATASETGROUPFIELD() { index="Кол-во", function = "cf_Sum" }
+                        }
+                    }
+                };
+                var groupFields = new Stack<string>(groups.Select(x => x.GroupField));
+                int countGroup = 0;
+                var groupDatas = GroupDatas(datas.Select(x => new DataGroupWrapper { Data = x }), new Stack<string>(groups.Select(x => x.GroupField)), ref countGroup).ToList();
+
+                cell.WorksheetRow().InsertRowsBelow(countGroup + 1);
+
+                var beginGroup = cell;
+
+                var fieldIndexes = datas.First()
+                    .Select((x, i) => new { field = x.Key, index = i })
+                    .ToDictionary(x => x.field, x => x.index);
+                var rowNumber = useRowNumber ? 1 : 0;
+                this.WriteGroupDatas(groupDatas, groups, 0, fieldIndexes, ref rowNumber, ref cell);
+
+                var indexGroupCell = fieldIndexes[groups[0].GroupField];
+                var groupCell = cell.CellRight(indexGroupCell);
+                groupCell.Value = "Общий итог";
+                groupCell.Style.Font.Bold = true;
+
+                foreach (var field in groups[0].FIELD)
+                {
+                    var indexFieldCell = fieldIndexes[field.index];
+                    var fieldCell = cell.CellRight(indexFieldCell);
+                    fieldCell.FormulaA1 = $"SUBTOTAL(9,{beginGroup.CellRight(indexFieldCell).Address}:{fieldCell.CellAbove().Address})";
+                    fieldCell.Style.Font.Bold = true;
+                }
+
+                cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
+            }
+            else
+            {
+                for (var i = 0; i < datas.Count; i++)
+                {
+                    if (useRowNumber)
+                    {
+                        cell.CellLeft().Value = i + 1;
+                    }
+                    foreach (var dataCell in datas[i])
+                    {
+                        cell.Value = dataCell.Value;
+                        cell = cell.CellRight();
+                    }
+                    cell = cell.CellLeft(datas[i].Count).CellBelow();
+                }
+            }
         }
-    } 
+        private IEnumerable<DataGroupWrapper> GroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, Stack<string> groupFields, ref int countGroup)
+        {
+            if (groupFields.Count > 0)
+            {
+                var groupDatas = dataWrappers.GroupBy(x => x.Data, new DataComparer(groupFields))
+                    .Select(x => new DataGroupWrapper { Data = x.First().Data, Groups = x.ToList() }).ToList();
+                groupFields.Pop();
+                countGroup += groupDatas.Count();
+                return this.GroupDatas(groupDatas, groupFields, ref countGroup);
+            }
+            else
+            {
+                return dataWrappers;
+            }
+        }
+
+        private void WriteGroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, MAINDATASETGROUP[] groups, int indexGroup, 
+            Dictionary<string, int> fieldIndexes, ref int rowNumber, ref IXLCell cell)
+        {
+            foreach(var dataWrapper in dataWrappers)
+            {
+                var beginGroup = cell;
+
+                if (groups.Length - 1 > indexGroup)
+                {
+                    this.WriteGroupDatas(dataWrapper.Groups, groups, indexGroup + 1, fieldIndexes, ref rowNumber, ref cell);
+                }
+                else
+                {
+                    foreach(var dataRow in dataWrapper.Groups)
+                    {
+                        if (rowNumber > 0)
+                        {
+                            cell.CellLeft().Value = rowNumber;
+                            rowNumber = rowNumber + 1;
+                        }
+                        foreach (var dataCell in dataRow.Data)
+                        {
+                            cell.Value = dataCell.Value;
+                            cell = cell.CellRight();
+                        }
+                        cell = cell.CellLeft(dataRow.Data.Count).CellBelow();
+                    }
+                }
+
+                this.WriteGroupCell(beginGroup, groups, indexGroup, fieldIndexes, cell);
+
+                cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
+
+                cell = cell.CellBelow();
+            }
+        }
+
+        private void WriteGroupCell(IXLCell beginGroup, MAINDATASETGROUP[] groups, int indexGroup, Dictionary<string, int> fieldIndexes, IXLCell cell)
+        {
+            var indexGroupCell = fieldIndexes[groups[indexGroup].GroupField];
+            var groupCell = cell.CellRight(indexGroupCell);
+            groupCell.Value = $"{groupCell.CellAbove(groups.Length - indexGroup).Value} Итог";
+            groupCell.Style.Font.Bold = true;
+
+            foreach (var field in groups[indexGroup].FIELD)
+            {
+                var indexFieldCell = fieldIndexes[field.index];
+                var fieldCell = cell.CellRight(indexFieldCell);
+                fieldCell.FormulaA1 = $"SUBTOTAL(9,{beginGroup.CellRight(indexFieldCell).Address}:{fieldCell.CellAbove().Address})";
+                fieldCell.Style.Font.Bold = true;
+            }
+        }
+    }
+
+    internal class DataGroupWrapper
+    {
+        public Dictionary<string, object> Data { get; set; }
+
+        public IEnumerable<DataGroupWrapper> Groups { get; set; }
+    }
+
+    internal class DataComparer : IEqualityComparer<object>
+    {
+        private IEnumerable<string> fields;
+
+        public DataComparer(IEnumerable<string> fields)
+        {
+            this.fields = fields;
+        }
+
+        public bool Equals([AllowNull] object x, [AllowNull] object y)
+        {
+            var xD = x as Dictionary<string, object>;
+            var yD = y as Dictionary<string, object>;
+            return fields.All(f => xD[f].ToString() == yD[f].ToString());
+        }
+
+        public int GetHashCode([DisallowNull] object obj)
+        {
+            var objD = obj as Dictionary<string, object>;
+            return string.Join("", fields.Select(x => objD[x])).GetHashCode();
+        }
+    }
 }

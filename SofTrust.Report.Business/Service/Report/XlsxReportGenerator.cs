@@ -78,21 +78,6 @@
                });
         }
 
-        protected Stream GenerateClosedXmlReport(Stream bookStream, Dictionary<string, List<Dictionary<string, object>>> datas)
-        {
-            var template = new XLTemplate(bookStream);
-            
-            template.AddVariable(datas);
-            
-            template.Generate();
-
-            var reportStream = new MemoryStream();
-            template.SaveAs(reportStream);
-            reportStream.Position = 0;
-
-            return reportStream;
-        }
-
         protected FileStreamResult GetXlsxFileStreamResult(Stream stream)
         {
             return new FileStreamResult(stream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };

@@ -39,6 +39,7 @@
                         }
                     case Newtonsoft.Json.Linq.JTokenType.Date:
                         {
+                            command.CommandText = command.CommandText.Replace($"@{newParameterName}.Value", DateTime.Parse(parameter.Value.ToString()).ToString("s"));
                             command.CommandText = command.CommandText.Replace($"@{newParameterName}", DateTime.Parse(parameter.Value.ToString()).ToString("s"));
                             break;
                         }

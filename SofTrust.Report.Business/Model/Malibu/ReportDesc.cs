@@ -102,6 +102,7 @@
     {
 
         private string sQLField;
+        private MAINDATASETGROUP[] gROUPField;
 
         private string nAMEField;
 
@@ -120,6 +121,20 @@
         }
 
         /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute("GROUP", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public MAINDATASETGROUP[] GROUP
+        {
+            get
+            {
+                return this.gROUPField;
+            }
+            set
+            {
+                this.gROUPField = value;
+            }
+        }
+
+        /// <remarks/>
         [System.Xml.Serialization.XmlAttributeAttribute()]
         public string NAME
         {
@@ -130,6 +145,89 @@
             set
             {
                 this.nAMEField = value;
+            }
+        }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+    public partial class MAINDATASETGROUP
+    {
+
+        private MAINDATASETGROUPFIELD[] fIELDField;
+
+        private string groupFieldField;
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute("FIELD", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public MAINDATASETGROUPFIELD[] FIELD
+        {
+            get
+            {
+                return this.fIELDField;
+            }
+            set
+            {
+                this.fIELDField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string GroupField
+        {
+            get
+            {
+                return this.groupFieldField;
+            }
+            set
+            {
+                this.groupFieldField = value;
+            }
+        }
+    }
+
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+    public partial class MAINDATASETGROUPFIELD
+    {
+
+        private string indexField;
+
+        private string functionField;
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string index
+        {
+            get
+            {
+                return this.indexField;
+            }
+            set
+            {
+                this.indexField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string function
+        {
+            get
+            {
+                return this.functionField;
+            }
+            set
+            {
+                this.functionField = value;
             }
         }
     }
