@@ -13,11 +13,7 @@
     using SofTrust.Report.Business.Service.DataSet;
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Model;
-    using Microsoft.AspNetCore.Components.Forms;
     using System.Diagnostics.CodeAnalysis;
-    using System;
-    using System.Dynamic;
-    using Microsoft.EntityFrameworkCore.Internal;
 
     public class MalibuReportGenerator : XlsxReportGenerator
     {
@@ -108,43 +104,13 @@
             {
                 cell.WorksheetRow().InsertRowsBelow(datas.Count - 1);
             }
-            var useRowNumber = cell.Address.ColumnNumber > 1 && cell.CellLeft().Value.ToString() == DATASET_INDEX;
+            var rowNumber = cell.Address.ColumnNumber > 1 && cell.CellLeft().Value.ToString() == DATASET_INDEX ? 1 : 0;
 
             if (dataSetDesc.GROUP?.Length > 0)
             {
-                var groups = new MAINDATASETGROUP[]
-                {
-                    new MAINDATASETGROUP()
-                    {
-                        GroupField = "sklad",
-                        FIELD = new MAINDATASETGROUPFIELD[]
-                        {
-                            new MAINDATASETGROUPFIELD() { index="Сумма", function = "cf_Sum" },
-                            new MAINDATASETGROUPFIELD() { index="Кол-во", function = "cf_Sum" }
-                        }
-                    },
-                    new MAINDATASETGROUP()
-                    {
-                        GroupField = "LSFO",
-                        FIELD = new MAINDATASETGROUPFIELD[]
-                        {
-                            new MAINDATASETGROUPFIELD() { index="Сумма", function = "cf_Sum" },
-                            new MAINDATASETGROUPFIELD() { index="Кол-во", function = "cf_Sum" }
-                        }
-                    },
-                    new MAINDATASETGROUP()
-                    {
-                        GroupField = "NUM",
-                        FIELD = new MAINDATASETGROUPFIELD[]
-                        {
-                            new MAINDATASETGROUPFIELD() { index="Сумма", function = "cf_Sum" },
-                            new MAINDATASETGROUPFIELD() { index="Кол-во", function = "cf_Sum" }
-                        }
-                    }
-                };
-                var groupFields = new Stack<string>(groups.Select(x => x.GroupField));
+                var groupFields = new Stack<string>(dataSetDesc.GROUP.Select(x => x.GroupField));
                 int countGroup = 0;
-                var groupDatas = GroupDatas(datas.Select(x => new DataGroupWrapper { Data = x }), new Stack<string>(groups.Select(x => x.GroupField)), ref countGroup).ToList();
+                var groupDatas = GroupDatas(datas.Select(x => new DataGroupWrapper { Data = x }), groupFields, ref countGroup).ToList();
 
                 cell.WorksheetRow().InsertRowsBelow(countGroup + 1);
 
@@ -153,41 +119,19 @@
                 var fieldIndexes = datas.First()
                     .Select((x, i) => new { field = x.Key, index = i })
                     .ToDictionary(x => x.field, x => x.index);
-                var rowNumber = useRowNumber ? 1 : 0;
-                this.WriteGroupDatas(groupDatas, groups, 0, fieldIndexes, ref rowNumber, ref cell);
+                this.WriteGroupDatas(groupDatas, dataSetDesc.GROUP, 0, fieldIndexes, ref rowNumber, ref cell);
 
-                var indexGroupCell = fieldIndexes[groups[0].GroupField];
-                var groupCell = cell.CellRight(indexGroupCell);
+                var groupCell = this.WriteGroupCell(beginGroup, dataSetDesc.GROUP, 0, fieldIndexes, cell);
                 groupCell.Value = "Общий итог";
-                groupCell.Style.Font.Bold = true;
-
-                foreach (var field in groups[0].FIELD)
-                {
-                    var indexFieldCell = fieldIndexes[field.index];
-                    var fieldCell = cell.CellRight(indexFieldCell);
-                    fieldCell.FormulaA1 = $"SUBTOTAL(9,{beginGroup.CellRight(indexFieldCell).Address}:{fieldCell.CellAbove().Address})";
-                    fieldCell.Style.Font.Bold = true;
-                }
 
                 cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
             }
             else
             {
-                for (var i = 0; i < datas.Count; i++)
-                {
-                    if (useRowNumber)
-                    {
-                        cell.CellLeft().Value = i + 1;
-                    }
-                    foreach (var dataCell in datas[i])
-                    {
-                        cell.Value = dataCell.Value;
-                        cell = cell.CellRight();
-                    }
-                    cell = cell.CellLeft(datas[i].Count).CellBelow();
-                }
+                this.WriteRowData(datas, ref rowNumber, ref cell);
             }
         }
+
         private IEnumerable<DataGroupWrapper> GroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, Stack<string> groupFields, ref int countGroup)
         {
             if (groupFields.Count > 0)
@@ -204,10 +148,10 @@
             }
         }
 
-        private void WriteGroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, MAINDATASETGROUP[] groups, int indexGroup, 
+        private void WriteGroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, MAINDATASETGROUP[] groups, int indexGroup,
             Dictionary<string, int> fieldIndexes, ref int rowNumber, ref IXLCell cell)
         {
-            foreach(var dataWrapper in dataWrappers)
+            foreach (var dataWrapper in dataWrappers)
             {
                 var beginGroup = cell;
 
@@ -217,23 +161,11 @@
                 }
                 else
                 {
-                    foreach(var dataRow in dataWrapper.Groups)
-                    {
-                        if (rowNumber > 0)
-                        {
-                            cell.CellLeft().Value = rowNumber;
-                            rowNumber = rowNumber + 1;
-                        }
-                        foreach (var dataCell in dataRow.Data)
-                        {
-                            cell.Value = dataCell.Value;
-                            cell = cell.CellRight();
-                        }
-                        cell = cell.CellLeft(dataRow.Data.Count).CellBelow();
-                    }
+                    this.WriteRowData(dataWrapper.Groups.Select(x => x.Data), ref rowNumber, ref cell);
                 }
 
-                this.WriteGroupCell(beginGroup, groups, indexGroup, fieldIndexes, cell);
+                var groupCell = this.WriteGroupCell(beginGroup, groups, indexGroup, fieldIndexes, cell);
+                groupCell.Value = $"{groupCell.CellAbove(groups.Length - indexGroup).Value} Итог";
 
                 cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
 
@@ -241,19 +173,51 @@
             }
         }
 
-        private void WriteGroupCell(IXLCell beginGroup, MAINDATASETGROUP[] groups, int indexGroup, Dictionary<string, int> fieldIndexes, IXLCell cell)
+        private void WriteRowData(IEnumerable<IDictionary<string, object>> datas, ref int rowNumber, ref IXLCell cell)
+        {
+            foreach (var dataRow in datas)
+            {
+                if (rowNumber > 0)
+                {
+                    cell.CellLeft().Value = rowNumber;
+                    rowNumber = rowNumber + 1;
+                }
+                foreach (var dataCell in dataRow)
+                {
+                    cell.Value = dataCell.Value;
+                    cell = cell.CellRight();
+                }
+                cell = cell.CellLeft(dataRow.Count).CellBelow();
+            }
+        }
+
+        private IXLCell WriteGroupCell(IXLCell beginGroup, MAINDATASETGROUP[] groups, int indexGroup, Dictionary<string, int> fieldIndexes, IXLCell cell)
         {
             var indexGroupCell = fieldIndexes[groups[indexGroup].GroupField];
             var groupCell = cell.CellRight(indexGroupCell);
-            groupCell.Value = $"{groupCell.CellAbove(groups.Length - indexGroup).Value} Итог";
             groupCell.Style.Font.Bold = true;
 
             foreach (var field in groups[indexGroup].FIELD)
             {
                 var indexFieldCell = fieldIndexes[field.index];
                 var fieldCell = cell.CellRight(indexFieldCell);
-                fieldCell.FormulaA1 = $"SUBTOTAL(9,{beginGroup.CellRight(indexFieldCell).Address}:{fieldCell.CellAbove().Address})";
+                var subTotalOperation = this.SubTotalOperation(field.function);
+                fieldCell.FormulaA1 = $"SUBTOTAL({subTotalOperation},{beginGroup.CellRight(indexFieldCell).Address}:{fieldCell.CellAbove().Address})";
                 fieldCell.Style.Font.Bold = true;
+            }
+            return groupCell;
+        }
+
+        private int SubTotalOperation(string function)
+        {
+            switch (function)
+            {
+                case "cf_Sum":
+                    return 9;
+                case "cf_Count":
+                    return 3;
+                default:
+                    return 0;
             }
         }
     }

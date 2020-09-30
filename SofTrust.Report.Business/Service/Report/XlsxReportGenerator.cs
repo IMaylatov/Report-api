@@ -62,12 +62,13 @@
                    while (reader.Read())
                    {
                        var data = new Dictionary<string, object>();
+                       var unnamedColumnIndex = 1;
                        for (int i = 0; i < reader.FieldCount; i++)
                        {
                            var fieldName = reader.GetName(i);
                            if (string.IsNullOrWhiteSpace(fieldName))
                            {
-                               fieldName = $"a{i}";
+                               fieldName = $"Column{unnamedColumnIndex++}";
                            }
                            data.Add(data.ContainsKey(fieldName) ? $"{fieldName}{i}" : fieldName, reader.GetValue(i));
                        }
