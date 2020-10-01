@@ -36,7 +36,8 @@ namespace SofTrust.Report.Api
 
             services.AddEntityFrameworkNpgsql().AddDbContext<ReportContext>(opt =>
                 opt.UseNpgsql(Configuration.GetConnectionString("ReportConnection"),
-                    x => x.MigrationsAssembly("SofTrust.Report.Migrations")));
+                        x => x.MigrationsAssembly("SofTrust.Report.Migrations"))
+                    .UseSnakeCaseNamingConvention());
 
             services.AddScoped<ReportGeneratorFactory, ReportGeneratorFactory>();
 
