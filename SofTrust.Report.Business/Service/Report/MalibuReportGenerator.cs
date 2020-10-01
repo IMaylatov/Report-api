@@ -59,10 +59,10 @@
             return this.GetXlsxFileStreamResult(reportStream);
         }
 
-        private Report GetReport(Stream template)
+        private Model.Malibu.Report GetReport(Stream template)
         {
-            var serializer = new XmlSerializer(typeof(Report));
-            return serializer.Deserialize(template) as Report;
+            var serializer = new XmlSerializer(typeof(Model.Malibu.Report));
+            return serializer.Deserialize(template) as Model.Malibu.Report;
         }
 
         private void FillBookData(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)

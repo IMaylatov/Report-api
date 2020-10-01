@@ -6,7 +6,6 @@
     using System.Linq;
     using System.Collections.Generic;
     using SofTrust.Report.Business.Service.DataSet;
-    using ClosedXML.Report;
     using SofTrust.Report.Business.Model;
 
     public abstract class XlsxReportGenerator : IReportGenerator

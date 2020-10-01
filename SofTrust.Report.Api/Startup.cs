@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SofTrust.Report.Business;
 using SofTrust.Report.Business.Service.DataSet;
 using SofTrust.Report.Business.Service.DataSource;
 using SofTrust.Report.Business.Service.Report;
@@ -31,6 +33,10 @@ namespace SofTrust.Report.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc(options => options.EnableEndpointRouting = false);
+
+            services.AddEntityFrameworkNpgsql().AddDbContext<ReportContext>(opt =>
+                opt.UseNpgsql(Configuration.GetConnectionString("ReportConnection"),
+                    x => x.MigrationsAssembly("SofTrust.Report.Migrations")));
 
             services.AddScoped<ReportGeneratorFactory, ReportGeneratorFactory>();
 
