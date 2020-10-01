@@ -11,7 +11,7 @@
     using Newtonsoft.Json.Linq;
     using SofTrust.Report.Business.Service.DataSet;
     using SofTrust.Report.Business.Service.DataSource;
-    using SofTrust.Report.Business.Model;
+    using SofTrust.Report.Service;
     using Microsoft.Extensions.Configuration;
     using System;
 

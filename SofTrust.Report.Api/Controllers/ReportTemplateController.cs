@@ -41,7 +41,7 @@
                 return this.BadRequest();
             }
 
-            var template = new Business.Model.Template { ReportId = reportId, Data = GetBytesFromFile(data) };
+            var template = new Business.Model.Domain.Template { ReportId = reportId, Data = GetBytesFromFile(data) };
             this.context.Templates.Add(template);
 
             await context.SaveChangesAsync();

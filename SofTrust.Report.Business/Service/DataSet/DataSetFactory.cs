@@ -4,7 +4,7 @@
     using SofTrust.Report.Business.Service.DataSource;
     using System.Collections.Generic;
     using System.Linq;
-    using SofTrust.Report.Business.Model;
+    using SofTrust.Report.Service;
     using Microsoft.Extensions.Configuration;
 
     public class DataSetFactory

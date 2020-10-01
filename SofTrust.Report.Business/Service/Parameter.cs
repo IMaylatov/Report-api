@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Business.Model
+﻿namespace SofTrust.Report.Service
 {
     using Newtonsoft.Json.Linq;
 

@@ -3,7 +3,7 @@
     using System.Collections.Generic;
     using SofTrust.Report.Business.Service.DataSet.Reader;
     using SofTrust.Report.Business.Service.DataSource;
-    using SofTrust.Report.Business.Model;
+    using SofTrust.Report.Service;
     using MoreLinq;
 
     public class SqlQueryDataSet : DataSet

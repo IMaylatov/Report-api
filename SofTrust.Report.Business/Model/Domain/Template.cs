@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Business.Model
+﻿namespace SofTrust.Report.Business.Model.Domain
 {
     public class Template
     {

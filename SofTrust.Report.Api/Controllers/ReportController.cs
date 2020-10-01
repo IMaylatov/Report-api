@@ -6,7 +6,7 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using SofTrust.Report.Business;
-    using SofTrust.Report.Business.Model;
+    using SofTrust.Report.Business.Model.Domain;
     using SofTrust.Report.Business.Model.Dto;
 
     [Route("api/reports")]
@@ -31,32 +31,36 @@
         [HttpGet("{id}")]
         public async Task<ActionResult<ReportDto>> GetReportById(int id)
         {
-            var report = await this.context.Reports.FindAsync(id);
+            var report = await this.context.Reports
+                .Include(x => x.ReportDataSources).ThenInclude(x => x.DataSource)
+                .Include(x => x.ReportDataSets).ThenInclude(x => x.DataSet)
+                .Include(x => x.ReportVariables).ThenInclude(x => x.Variable)
+                .FirstOrDefaultAsync(x => x.Id == id);
             if (report == null)
             {
                 return NotFound();
             }
-            return this.Ok(report.Adapt<ReportDto>());
+            return this.Ok(report.AdaptToDto());
         }
 
         [HttpPost]
-        public async Task<ActionResult<SaveReportDto>> CreateReport([FromBody] SaveReportDto reportDto)
+        public async Task<ActionResult<ReportDto>> CreateReport([FromBody] ReportDto reportDto)
         {
-            var report = reportDto.Adapt<Report>();
+            var report = reportDto.AdaptToDomain();
             this.context.Reports.Add(report);
             await this.context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.Adapt<SaveReportDto>());
+            return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<SaveReportDto>> UpdateReport(int id, [FromBody] SaveReportDto reportDto)
+        public async Task<ActionResult<ReportDto>> UpdateReport(int id, [FromBody] ReportDto reportDto)
         {
-            var report = reportDto.Adapt<Report>();
+            var report = reportDto.AdaptToDomain();
             this.context.Entry(report).State = EntityState.Modified;
             await this.context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.Adapt<SaveReportDto>());
+            return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
         }
 
         [HttpDelete("{id}")]
