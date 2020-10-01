@@ -13,6 +13,8 @@
 
         public IDataSourceConnection Connection { get; set; }
 
+        public int Timeout { set => this.command.CommandTimeout = value; }
+
         public MsSqlQueryDataSetCommand(IDataSourceConnection connection, SqlCommand command)
         {
             this.Connection = connection;

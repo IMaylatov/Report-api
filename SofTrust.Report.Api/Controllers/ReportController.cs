@@ -1,6 +1,7 @@
 ﻿namespace SofTrust.Report.Api.Controllers
 {
     using System.Collections.Generic;
+    using ClosedXML.Excel;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
@@ -57,8 +58,8 @@
             var report = JToken.Parse(reportJson);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
-                        
-            using(var templateStream = template.OpenReadStream())
+
+            using (var templateStream = template.OpenReadStream())
             {
                 return reportGenerator.Generate(report, templateStream);
             }

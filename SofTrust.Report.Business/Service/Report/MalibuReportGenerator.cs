@@ -14,6 +14,8 @@
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Model;
     using System.Diagnostics.CodeAnalysis;
+    using Microsoft.Extensions.Configuration;
+    using System;
 
     public class MalibuReportGenerator : XlsxReportGenerator
     {
@@ -23,6 +25,15 @@
         private Regex COMMENT_DATASET_NAME_REGEX = new Regex(@"(?i)&&tab\.(\w*)(?-i)");
         private Regex COMMENT_DATASET_RECORDNUMBER_REGEX = new Regex(@"(?i)!--(\w*)\.RecordNumber(?-i)");
         private Regex PARAM_REGEX = new Regex(@"(?i)(&&Param\.[\.\w]*)(?-i)");
+        private Regex FORMULA_REGION_REGEX = new Regex(@"([A-Z][0-9]+)");
+        private Regex FORMULA_REGION_ROW_REGEX = new Regex(@"([0-9]+)");
+
+        private readonly int timeout;
+
+        public MalibuReportGenerator(IConfiguration configuration)
+        {
+            this.timeout = int.Parse(configuration["XlsxReport:DataSet:SqlQuery:CommandTimeout"]);
+        }
 
         public override FileStreamResult Generate(JToken jReport, Stream bookStream)
         {
@@ -35,7 +46,7 @@
             var reportDesc = report.DeserializeReportDesc();
             var reportBook = report.DeserializeReportTemplate();
 
-            var dataSets = reportDesc.DATASET.Select(x => new SqlQueryDataSet(dataSource, x.SQL, parameters) { Name = x.NAME });
+            var dataSets = reportDesc.DATASET.Select(x => new SqlQueryDataSet(dataSource, x.SQL, parameters, timeout) { Name = x.NAME });
 
             var datas = this.GetDatas(dataSets);
 
@@ -56,13 +67,15 @@
 
         private void FillBookData(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)
         {
+            var shiftRanges = 0;
             book.Worksheets
                 .ForEach(sheet => sheet.RowsUsed()
                     .ForEach(row => row.CellsUsed()
-                        .ForEach(cell => this.ConvertCellMalibuToClosedXml(cell, parameters, datas, dataSetDescs))));
+                        .ForEach(cell => this.ConvertCellMalibuToClosedXml(cell, parameters, datas, dataSetDescs, ref shiftRanges))));
         }
 
-        private void ConvertCellMalibuToClosedXml(IXLCell cell, IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, MAINDATASET[] dataSetDescs)
+        private void ConvertCellMalibuToClosedXml(IXLCell cell, IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas,
+            MAINDATASET[] dataSetDescs, ref int shiftRanges)
         {
             string cellValue;
             if (cell.TryGetValue(out cellValue) && !string.IsNullOrWhiteSpace(cellValue))
@@ -71,7 +84,18 @@
                 if (matches.Count > 0)
                 {
                     foreach (Match match in matches)
-                        cellValue = cellValue.Replace(match.Value, parameters.FirstOrDefault(x => match.Value.Contains(x.Name, System.StringComparison.InvariantCultureIgnoreCase)).Value.ToString());
+                    {
+                        var parameter = parameters.FirstOrDefault(x => match.Value.Contains(x.Name, System.StringComparison.InvariantCultureIgnoreCase));
+                        switch (parameter.Value.Type)
+                        {
+                            case JTokenType.Date:
+                                cellValue = cellValue.Replace(match.Value, DateTime.Parse(parameter.Value.ToString()).ToShortDateString());
+                                break;
+                            default:
+                                cellValue = cellValue.Replace(match.Value, parameter.Value.ToString());
+                                break;
+                        }
+                    }
                     cell.SetValue(cellValue);
                 }
             }
@@ -84,7 +108,7 @@
                     var dataName = commentMatch.Groups[1].Value.ToLower();
                     if (datas.ContainsKey(dataName))
                     {
-                        this.WriteTemplateData(cell, datas[dataName], dataSetDescs.FirstOrDefault(x => x.NAME.Contains(dataName, System.StringComparison.InvariantCultureIgnoreCase)));
+                        this.WriteTemplateData(cell, datas[dataName], dataSetDescs.FirstOrDefault(x => x.NAME.Contains(dataName, System.StringComparison.InvariantCultureIgnoreCase)), ref shiftRanges);
                     }
                 }
                 else
@@ -96,12 +120,24 @@
                 }
                 cell.Comment.Delete();
             }
+
+            if (cell.HasFormula)
+            {
+                var formulaMatches = FORMULA_REGION_REGEX.Matches(cell.FormulaA1);
+                foreach(Match formulaMatch in formulaMatches)
+                {
+                    var rowMatch = int.Parse(FORMULA_REGION_ROW_REGEX.Match(formulaMatch.Value).Value);
+                    var newAddress = formulaMatch.Value.Replace(rowMatch.ToString(), (shiftRanges + rowMatch).ToString());
+                    cell.FormulaA1 = cell.FormulaA1.Replace(formulaMatch.Value, newAddress);
+                }
+            }
         }
 
-        private void WriteTemplateData(IXLCell cell, List<Dictionary<string, object>> datas, MAINDATASET dataSetDesc)
+        private void WriteTemplateData(IXLCell cell, List<Dictionary<string, object>> datas, MAINDATASET dataSetDesc, ref int shiftRanges)
         {
             if (datas.Count > 1)
             {
+                shiftRanges = shiftRanges + datas.Count - 1;
                 cell.WorksheetRow().InsertRowsBelow(datas.Count - 1);
             }
             var rowNumber = cell.Address.ColumnNumber > 1 && cell.CellLeft().Value.ToString() == DATASET_INDEX ? 1 : 0;
@@ -112,6 +148,7 @@
                 int countGroup = 0;
                 var groupDatas = GroupDatas(datas.Select(x => new DataGroupWrapper { Data = x }), groupFields, ref countGroup).ToList();
 
+                shiftRanges = shiftRanges + countGroup - dataSetDesc.GROUP.Length;
                 cell.WorksheetRow().InsertRowsBelow(countGroup + 1);
 
                 var beginGroup = cell;

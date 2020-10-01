@@ -10,5 +10,6 @@
         IDataSourceConnection Connection { get; set; }
         IDataSetReader ExecuteReader();
         void AddParameters(IEnumerable<Parameter> parameters);
+        int Timeout { set; }
     }
 }

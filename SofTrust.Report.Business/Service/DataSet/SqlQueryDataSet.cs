@@ -11,14 +11,16 @@
         private readonly IDataSource dataSource;
         private readonly string query;
         private readonly IEnumerable<Parameter> parameters;
+        private readonly int timeout;
 
         public string Name { get; set; }
 
-        public SqlQueryDataSet(IDataSource dataSource, string query, IEnumerable<Parameter> parameters)
+        public SqlQueryDataSet(IDataSource dataSource, string query, IEnumerable<Parameter> parameters, int timeout)
         {
             this.dataSource = dataSource;
             this.query = query;
             this.parameters = parameters;
+            this.timeout = timeout;
         }
 
         public IDataSetReader ExecuteReader()
@@ -29,6 +31,7 @@
             var command = dataSourceConnection.CreateCommand(sqlQuery);
             command.AddParameters(parameters);
             command.Connection.Open();
+            command.Timeout = this.timeout;
             return command.ExecuteReader();
         }
     }
