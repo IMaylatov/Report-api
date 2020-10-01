@@ -53,12 +53,11 @@
         [HttpPost("run")]
         public IActionResult Run(
             [FromForm(Name = "report")] string reportJson,
-            [FromForm(Name = "templateData")] IFormFile template)
+            [FromForm(Name = "template")] IFormFile template)
         {
             var report = JToken.Parse(reportJson);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
-
             using (var templateStream = template.OpenReadStream())
             {
                 return reportGenerator.Generate(report, templateStream);

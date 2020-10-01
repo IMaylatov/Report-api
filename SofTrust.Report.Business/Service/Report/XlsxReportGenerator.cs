@@ -52,7 +52,7 @@
             }
         }
 
-        protected Dictionary<string, List<Dictionary<string, object>>> GetDatas(IEnumerable<IDataSet> dataSets)
+        protected Dictionary<string, List<Dictionary<string, object>>> GetDatas(IEnumerable<DataSet> dataSets)
         {
             return dataSets
                .ToDictionary(x => x.Name.ToLower(), x =>

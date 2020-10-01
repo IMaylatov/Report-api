@@ -7,21 +7,16 @@
         const string DATASOURCE_TYPE_MSSQL = "MsSql";
         const string DATASOURCE_TYPE_POSTGRESQL = "PostgreSql";
 
-        public IDataSource Create(JToken dataSource)
+        public DataSource Create(JToken dataSource)
         {
-            IDataSource source = null;
             switch (dataSource["type"].ToString())
             {
                 case DATASOURCE_TYPE_MSSQL:
-                    source = new MsSqlDataSource(dataSource["data"]["connectionString"].ToString()) { Name = dataSource["name"].ToString() };
-                    break;
+                    return new MsSqlDataSource(dataSource["data"]["connectionString"].ToString()) { Name = dataSource["name"].ToString() };
                 case DATASOURCE_TYPE_POSTGRESQL:
-                    source = new NpgsqlDataSource(dataSource["data"]["connectionString"].ToString()) { Name = dataSource["name"].ToString() };
-                    break;
-                default:
-                    break;
+                    return new NpgsqlDataSource(dataSource["data"]["connectionString"].ToString()) { Name = dataSource["name"].ToString() };
             }
-            return source;
+            return null;
         }
     }
 }

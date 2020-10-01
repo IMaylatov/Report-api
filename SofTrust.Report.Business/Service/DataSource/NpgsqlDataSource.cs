@@ -2,18 +2,16 @@
 {
     using SofTrust.Report.Business.Service.DataSource.Connection;
 
-    public class NpgsqlDataSource : IDataSource
+    public class NpgsqlDataSource : DataSource
     {
         private readonly string connectionString;
-
-        public string Name { get; set; }
 
         public NpgsqlDataSource(string connectionString)
         {
             this.connectionString = connectionString;
         }
 
-        public IDataSourceConnection CreateConnection()
+        public override IDataSourceConnection CreateConnection()
         {
             throw new System.NotImplementedException();
         }

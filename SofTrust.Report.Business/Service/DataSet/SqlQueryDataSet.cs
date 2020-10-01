@@ -6,16 +6,14 @@
     using SofTrust.Report.Business.Model;
     using MoreLinq;
 
-    public class SqlQueryDataSet : IDataSet
+    public class SqlQueryDataSet : DataSet
     {
-        private readonly IDataSource dataSource;
+        private readonly DataSource dataSource;
         private readonly string query;
         private readonly IEnumerable<Parameter> parameters;
         private readonly int timeout;
 
-        public string Name { get; set; }
-
-        public SqlQueryDataSet(IDataSource dataSource, string query, IEnumerable<Parameter> parameters, int timeout)
+        public SqlQueryDataSet(DataSource dataSource, string query, IEnumerable<Parameter> parameters, int timeout)
         {
             this.dataSource = dataSource;
             this.query = query;
@@ -23,7 +21,7 @@
             this.timeout = timeout;
         }
 
-        public IDataSetReader ExecuteReader()
+        public override IDataSetReader ExecuteReader()
         {
             var dataSourceConnection = this.dataSource.CreateConnection();
             var sqlQuery = query;

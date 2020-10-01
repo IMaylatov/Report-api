@@ -6,7 +6,6 @@
     public interface IDataSourceConnection : IDisposable
     {
         void Open();
-        void Close();
         IDataSetCommand CreateCommand(object cmd);
     }
 }

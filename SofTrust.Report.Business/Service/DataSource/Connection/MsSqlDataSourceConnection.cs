@@ -18,11 +18,6 @@
             this.connection.Open();
         }
 
-        public void Close()
-        {
-            this.connection.Close();
-        }
-
         public void Dispose()
         {
             this.connection.Close();

@@ -2,9 +2,10 @@
 {
     using SofTrust.Report.Business.Service.DataSource.Connection;
 
-    public interface IDataSource
+    public abstract class DataSource
     {
         public string Name { get; set; }
-        IDataSourceConnection CreateConnection();
+
+        public abstract IDataSourceConnection CreateConnection();
     }
 }

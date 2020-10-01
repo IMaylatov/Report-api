@@ -18,9 +18,8 @@
             this.timeout = int.Parse(configuration["XlsxReport:DataSet:SqlQuery:CommandTimeout"]);
         }
 
-        public IDataSet Create(JToken dataSetJ, IEnumerable<IDataSource> dataSources, IEnumerable<Parameter> parameters)
+        public DataSet Create(JToken dataSetJ, IEnumerable<DataSource> dataSources, IEnumerable<Parameter> parameters)
         {
-            IDataSet dataSet = null;
             switch (dataSetJ["type"].ToString())
             {
                 case DATASET_TYPE_SQLQUERY:
@@ -28,13 +27,10 @@
                         var name = dataSetJ["name"].ToString();
                         var dataSourceName = dataSetJ["data"]["dataSourceName"].ToString();
                         var query = dataSetJ["data"]["query"].ToString();
-                        dataSet = new SqlQueryDataSet(dataSources.FirstOrDefault(x => x.Name == dataSourceName) , query, parameters, timeout) { Name = name };
+                        return new SqlQueryDataSet(dataSources.FirstOrDefault(x => x.Name == dataSourceName) , query, parameters, timeout) { Name = name };
                     }
-                    break;
-                default:
-                    break;
             }
-            return dataSet;
+            return null;
         }
     }
 }

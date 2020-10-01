@@ -40,7 +40,7 @@
             var parameters = this.GetParameters(jReport["parameters"]);
 
             var dataSource = new MsSqlDataSource(jReport["connection"]["connectionString"].ToString()) { Name = DEFAULT_DATASOURCE_NAME };
-            var dataSources = new List<IDataSource>() { dataSource };
+            var dataSources = new List<DataSource>() { dataSource };
 
             var report = this.GetReport(bookStream);
             var reportDesc = report.DeserializeReportDesc();
@@ -80,56 +80,69 @@
             string cellValue;
             if (cell.TryGetValue(out cellValue) && !string.IsNullOrWhiteSpace(cellValue))
             {
-                var matches = PARAM_REGEX.Matches(cellValue);
-                if (matches.Count > 0)
-                {
-                    foreach (Match match in matches)
-                    {
-                        var parameter = parameters.FirstOrDefault(x => match.Value.Contains(x.Name, System.StringComparison.InvariantCultureIgnoreCase));
-                        switch (parameter.Value.Type)
-                        {
-                            case JTokenType.Date:
-                                cellValue = cellValue.Replace(match.Value, DateTime.Parse(parameter.Value.ToString()).ToShortDateString());
-                                break;
-                            default:
-                                cellValue = cellValue.Replace(match.Value, parameter.Value.ToString());
-                                break;
-                        }
-                    }
-                    cell.SetValue(cellValue);
-                }
+                HandleCellValue(parameters, cell, cellValue);
             }
 
             if (cell.HasComment)
             {
-                var commentMatch = COMMENT_DATASET_NAME_REGEX.Match(cell.Comment.Text);
-                if (commentMatch.Success)
-                {
-                    var dataName = commentMatch.Groups[1].Value.ToLower();
-                    if (datas.ContainsKey(dataName))
-                    {
-                        this.WriteTemplateData(cell, datas[dataName], dataSetDescs.FirstOrDefault(x => x.NAME.Contains(dataName, System.StringComparison.InvariantCultureIgnoreCase)), ref shiftRanges);
-                    }
-                }
-                else
-                {
-                    if (COMMENT_DATASET_RECORDNUMBER_REGEX.Match(cell.Comment.Text).Success)
-                    {
-                        cell.Value = DATASET_INDEX;
-                    }
-                }
-                cell.Comment.Delete();
+                HandleCellComment(cell, datas, dataSetDescs, ref shiftRanges);
             }
 
             if (cell.HasFormula)
             {
-                var formulaMatches = FORMULA_REGION_REGEX.Matches(cell.FormulaA1);
-                foreach(Match formulaMatch in formulaMatches)
+                HandleCellFormula(cell, shiftRanges);
+            }
+        }
+
+        private void HandleCellValue(IEnumerable<Parameter> parameters, IXLCell cell, string cellValue)
+        {
+            var matches = PARAM_REGEX.Matches(cellValue);
+            if (matches.Count > 0)
+            {
+                foreach (Match match in matches)
                 {
-                    var rowMatch = int.Parse(FORMULA_REGION_ROW_REGEX.Match(formulaMatch.Value).Value);
-                    var newAddress = formulaMatch.Value.Replace(rowMatch.ToString(), (shiftRanges + rowMatch).ToString());
-                    cell.FormulaA1 = cell.FormulaA1.Replace(formulaMatch.Value, newAddress);
+                    var parameter = parameters.FirstOrDefault(x => match.Value.Contains(x.Name, System.StringComparison.InvariantCultureIgnoreCase));
+                    switch (parameter.Value.Type)
+                    {
+                        case JTokenType.Date:
+                            cellValue = cellValue.Replace(match.Value, DateTime.Parse(parameter.Value.ToString()).ToShortDateString());
+                            break;
+                        default:
+                            cellValue = cellValue.Replace(match.Value, parameter.Value.ToString());
+                            break;
+                    }
                 }
+                cell.SetValue(cellValue);
+            }
+        }
+
+        private void HandleCellComment(IXLCell cell, Dictionary<string, List<Dictionary<string, object>>> datas, MAINDATASET[] dataSetDescs, ref int shiftRanges)
+        {
+            var commentMatch = COMMENT_DATASET_NAME_REGEX.Match(cell.Comment.Text);
+            if (commentMatch.Success)
+            {
+                var dataName = commentMatch.Groups[1].Value.ToLower();
+                if (datas.ContainsKey(dataName))
+                {
+                    this.WriteTemplateData(cell, datas[dataName],
+                        dataSetDescs.FirstOrDefault(x => x.NAME.Contains(dataName, System.StringComparison.InvariantCultureIgnoreCase)), ref shiftRanges);
+                }
+            }
+            else if (COMMENT_DATASET_RECORDNUMBER_REGEX.Match(cell.Comment.Text).Success)
+            {
+                cell.Value = DATASET_INDEX;
+            }
+            cell.Comment.Delete();
+        }
+
+        private void HandleCellFormula(IXLCell cell, int shiftRanges)
+        {
+            var formulaMatches = FORMULA_REGION_REGEX.Matches(cell.FormulaA1);
+            foreach (Match formulaMatch in formulaMatches)
+            {
+                var rowMatch = int.Parse(FORMULA_REGION_ROW_REGEX.Match(formulaMatch.Value).Value);
+                var newAddress = formulaMatch.Value.Replace(rowMatch.ToString(), (shiftRanges + rowMatch).ToString());
+                cell.FormulaA1 = cell.FormulaA1.Replace(formulaMatch.Value, newAddress);
             }
         }
 
@@ -142,11 +155,11 @@
             }
             var rowNumber = cell.Address.ColumnNumber > 1 && cell.CellLeft().Value.ToString() == DATASET_INDEX ? 1 : 0;
 
-            if (dataSetDesc.GROUP?.Length > 0)
+            if (dataSetDesc.GROUP?.Length > 0 && datas.Count > 1)
             {
                 var groupFields = new Stack<string>(dataSetDesc.GROUP.Select(x => x.GroupField));
                 int countGroup = 0;
-                var groupDatas = GroupDatas(datas.Select(x => new DataGroupWrapper { Data = x }), groupFields, ref countGroup).ToList();
+                var groupDatas = GetGroupDatas(datas.Select(x => new DataGroupWrapper { Data = x }), groupFields, ref countGroup).ToList();
 
                 shiftRanges = shiftRanges + countGroup - dataSetDesc.GROUP.Length;
                 cell.WorksheetRow().InsertRowsBelow(countGroup + 1);
@@ -158,10 +171,8 @@
                     .ToDictionary(x => x.field, x => x.index);
                 this.WriteGroupDatas(groupDatas, dataSetDesc.GROUP, 0, fieldIndexes, ref rowNumber, ref cell);
 
-                var groupCell = this.WriteGroupCell(beginGroup, dataSetDesc.GROUP, 0, fieldIndexes, cell);
+                var groupCell = GroupData(dataSetDesc.GROUP, 0, fieldIndexes, cell, beginGroup);
                 groupCell.Value = "Общий итог";
-
-                cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
             }
             else
             {
@@ -169,7 +180,7 @@
             }
         }
 
-        private IEnumerable<DataGroupWrapper> GroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, Stack<string> groupFields, ref int countGroup)
+        private IEnumerable<DataGroupWrapper> GetGroupDatas(IEnumerable<DataGroupWrapper> dataWrappers, Stack<string> groupFields, ref int countGroup)
         {
             if (groupFields.Count > 0)
             {
@@ -177,7 +188,7 @@
                     .Select(x => new DataGroupWrapper { Data = x.First().Data, Groups = x.ToList() }).ToList();
                 groupFields.Pop();
                 countGroup += groupDatas.Count();
-                return this.GroupDatas(groupDatas, groupFields, ref countGroup);
+                return this.GetGroupDatas(groupDatas, groupFields, ref countGroup);
             }
             else
             {
@@ -201,13 +212,20 @@
                     this.WriteRowData(dataWrapper.Groups.Select(x => x.Data), ref rowNumber, ref cell);
                 }
 
-                var groupCell = this.WriteGroupCell(beginGroup, groups, indexGroup, fieldIndexes, cell);
+                var groupCell = GroupData(groups, indexGroup, fieldIndexes, cell, beginGroup);
                 groupCell.Value = $"{groupCell.CellAbove(groups.Length - indexGroup).Value} Итог";
-
-                cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
 
                 cell = cell.CellBelow();
             }
+        }
+
+        private IXLCell GroupData(MAINDATASETGROUP[] groups, int indexGroup, Dictionary<string, int> fieldIndexes, IXLCell cell, IXLCell beginGroup)
+        {
+            var groupCell = this.WriteGroupCell(beginGroup, groups, indexGroup, fieldIndexes, cell);
+
+            cell.Worksheet.Rows(beginGroup.Address.RowNumber, cell.Address.RowNumber - 1).Group();
+
+            return groupCell;
         }
 
         private void WriteRowData(IEnumerable<IDictionary<string, object>> datas, ref int rowNumber, ref IXLCell cell)

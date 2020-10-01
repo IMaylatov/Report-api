@@ -3,18 +3,16 @@
     using SofTrust.Report.Business.Service.DataSource.Connection;
     using System.Data.SqlClient;
 
-    public class MsSqlDataSource : IDataSource
+    public class MsSqlDataSource : DataSource
     {
         private readonly string connectionString;
-
-        public string Name { get; set; }
 
         public MsSqlDataSource(string connectionString)
         {
             this.connectionString = connectionString;
         }
 
-        public IDataSourceConnection CreateConnection()
+        public override IDataSourceConnection CreateConnection()
         {
             return new MsSqlDataSourceConnection(new SqlConnection(connectionString));
         }
