@@ -70,12 +70,11 @@
         {
             var report = await this.context.Reports
                 .Include(x => x.Templates)
-                .Include(x => x.Type)
                 .FirstOrDefaultAsync(x => x.Id == reportId);
 
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
-            switch (report.Type.Name)
+            switch (report.Type)
             {
                 case "ClosedXml":
                     return new FileStreamResult(templateStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };

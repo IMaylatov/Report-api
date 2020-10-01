@@ -51,7 +51,7 @@
                 .FirstOrDefaultAsync(x => x.Id == id);
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
-            var reportGenerator = this.reportGeneratorFactory.Create(report.Type.Name);
+            var reportGenerator = this.reportGeneratorFactory.Create(report.Type);
             return reportGenerator.Generate(reportJ, templateStream);
         }
     }

@@ -31,9 +31,7 @@
         [HttpGet("{id}")]
         public async Task<ActionResult<ReportDto>> GetReportById(int id)
         {
-            var report = await this.context.Reports
-                .Include(x => x.Type)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var report = await this.context.Reports.FindAsync(id);
             if (report == null)
             {
                 return NotFound();
