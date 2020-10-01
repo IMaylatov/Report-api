@@ -9,8 +9,8 @@
         {
         }
 
-        //public DbSet<Report> Reports { get; set; }
-        //public DbSet<ReportType> ReportTypes { get; set; }
-        //public DbSet<Template> Templates { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<ReportType> ReportTypes { get; set; }
+        public DbSet<Template> Templates { get; set; }
     }
 }
