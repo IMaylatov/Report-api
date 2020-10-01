@@ -46,7 +46,6 @@
             var reportJ = JToken.Parse(reportJson);
 
             var report = await this.context.Reports
-                .Include(x => x.Type)
                 .Include(x => x.Templates)
                 .FirstOrDefaultAsync(x => x.Id == id);
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
