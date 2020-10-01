@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Business.Service.Report
+﻿namespace SofTrust.Report.Business.Service.Report.ClosedXml
 {
     using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;

@@ -21,7 +21,7 @@
         }
         
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ListItemReportDto>>> Get()
+        public async Task<ActionResult<IEnumerable<ListItemReportDto>>> GetReports()
         {
             var reports = await this.context.Reports
                 .ToListAsync();
@@ -29,7 +29,7 @@
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ReportDto>> Get(int id)
+        public async Task<ActionResult<ReportDto>> GetReportById(int id)
         {
             var report = await this.context.Reports
                 .Include(x => x.Type)
@@ -42,27 +42,27 @@
         }
 
         [HttpPost]
-        public async Task<ActionResult<SaveReportDto>> Post([FromBody] SaveReportDto reportDto)
+        public async Task<ActionResult<SaveReportDto>> CreateReport([FromBody] SaveReportDto reportDto)
         {
             var report = reportDto.Adapt<Report>();
             this.context.Reports.Add(report);
             await this.context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(Get), new { id = report.Id }, report.Adapt<SaveReportDto>());
+            return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.Adapt<SaveReportDto>());
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<SaveReportDto>> Put(int id, [FromBody] SaveReportDto reportDto)
+        public async Task<ActionResult<SaveReportDto>> UpdateReport(int id, [FromBody] SaveReportDto reportDto)
         {
             var report = reportDto.Adapt<Report>();
             this.context.Entry(report).State = EntityState.Modified;
             await this.context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(Get), new { id = report.Id }, report.Adapt<SaveReportDto>());
+            return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.Adapt<SaveReportDto>());
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> DeleteReport(int id)
         {
             var report = await context.Reports.FindAsync(id);
             if (report == null)

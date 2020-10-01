@@ -15,6 +15,8 @@ using SofTrust.Report.Business;
 using SofTrust.Report.Business.Service.DataSet;
 using SofTrust.Report.Business.Service.DataSource;
 using SofTrust.Report.Business.Service.Report;
+using SofTrust.Report.Business.Service.Report.ClosedXml;
+using SofTrust.Report.Business.Service.Report.Malibu;
 
 namespace SofTrust.Report.Api
 {

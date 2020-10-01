@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Business.Model.Malibu
+﻿namespace SofTrust.Report.Business.Service.Report.Malibu
 {
     using ClosedXML.Excel;
     using System.IO;

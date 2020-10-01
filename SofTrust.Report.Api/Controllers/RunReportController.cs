@@ -7,21 +7,22 @@
     using SofTrust.Report.Business;
     using SofTrust.Report.Business.Service.Report;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
 
-    [Route("api/reportRun")]
+    [Route("api/run/report")]
     [ApiController]
-    public class ReportRunController : ControllerBase
+    public class RunReportController : ControllerBase
     {
         private readonly ReportContext context;
         private readonly ReportGeneratorFactory reportGeneratorFactory;
 
-        public ReportRunController(
+        public RunReportController(
             ReportGeneratorFactory reportGeneratorFactory,
-            ReportContext reportContext)
+            ReportContext context)
         {
             this.reportGeneratorFactory = reportGeneratorFactory;
-            this.context = reportContext;
+            this.context = context;
         }
 
         [HttpPost]
@@ -38,7 +39,6 @@
             }
         }
 
-
         [HttpPost("{id}")]
         public async Task<IActionResult> Run(int id,
             [FromForm(Name = "report")] string reportJson)
@@ -46,11 +46,12 @@
             var reportJ = JToken.Parse(reportJson);
 
             var report = await this.context.Reports
-                .Include(x => x.Template)
+                .Include(x => x.Type)
+                .Include(x => x.Templates)
                 .FirstOrDefaultAsync(x => x.Id == id);
-            var templateStream = new MemoryStream(report.Template.Data);
+            var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
-            var reportGenerator = this.reportGeneratorFactory.Create(reportJ["type"].ToString());
+            var reportGenerator = this.reportGeneratorFactory.Create(report.Type.Name);
             return reportGenerator.Generate(reportJ, templateStream);
         }
     }

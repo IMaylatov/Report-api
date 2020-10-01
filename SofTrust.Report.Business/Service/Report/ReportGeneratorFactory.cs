@@ -1,6 +1,8 @@
 ﻿namespace SofTrust.Report.Business.Service.Report
 {
     using Microsoft.Extensions.DependencyInjection;
+    using SofTrust.Report.Business.Service.Report.ClosedXml;
+    using SofTrust.Report.Business.Service.Report.Malibu;
     using System;
 
     public class ReportGeneratorFactory

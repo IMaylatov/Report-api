@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Business.Service.Report
+﻿namespace SofTrust.Report.Business.Service.Report.Malibu
 {
     using System.Collections.Generic;
     using System.IO;
@@ -9,11 +9,9 @@
     using Microsoft.AspNetCore.Mvc;
     using MoreLinq;
     using Newtonsoft.Json.Linq;
-    using SofTrust.Report.Business.Model.Malibu;
     using SofTrust.Report.Business.Service.DataSet;
     using SofTrust.Report.Business.Service.DataSource;
     using SofTrust.Report.Business.Model;
-    using System.Diagnostics.CodeAnalysis;
     using Microsoft.Extensions.Configuration;
     using System;
 
@@ -59,10 +57,10 @@
             return this.GetXlsxFileStreamResult(reportStream);
         }
 
-        private Model.Malibu.Report GetReport(Stream template)
+        private Report GetReport(Stream template)
         {
-            var serializer = new XmlSerializer(typeof(Model.Malibu.Report));
-            return serializer.Deserialize(template) as Model.Malibu.Report;
+            var serializer = new XmlSerializer(typeof(Report));
+            return serializer.Deserialize(template) as Report;
         }
 
         private void FillBookData(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)
@@ -274,36 +272,6 @@
                 default:
                     return 0;
             }
-        }
-    }
-
-    internal class DataGroupWrapper
-    {
-        public Dictionary<string, object> Data { get; set; }
-
-        public IEnumerable<DataGroupWrapper> Groups { get; set; }
-    }
-
-    internal class DataComparer : IEqualityComparer<object>
-    {
-        private IEnumerable<string> fields;
-
-        public DataComparer(IEnumerable<string> fields)
-        {
-            this.fields = fields;
-        }
-
-        public bool Equals([AllowNull] object x, [AllowNull] object y)
-        {
-            var xD = x as Dictionary<string, object>;
-            var yD = y as Dictionary<string, object>;
-            return fields.All(f => xD[f].ToString() == yD[f].ToString());
-        }
-
-        public int GetHashCode([DisallowNull] object obj)
-        {
-            var objD = obj as Dictionary<string, object>;
-            return string.Join("", fields.Select(x => objD[x])).GetHashCode();
         }
     }
 }

@@ -8,6 +8,8 @@
     using System.IO;
     using SofTrust.Report.Business.Model.Dto;
     using Mapster;
+    using System.Linq.Dynamic.Core;
+    using System.Linq;
 
     [Route("api/reports/{reportId}/template")]
     [ApiController]
@@ -21,14 +23,57 @@
         }
 
         [HttpGet]
+        public async Task<ActionResult<TemplateDto>> GetReportTemplate(int reportId)
+        {
+            var template = await this.context.Templates
+                .FirstOrDefaultAsync(x => x.ReportId == reportId);
+
+            return this.Ok(template.Adapt<TemplateDto>());
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<TemplateDto>> CreateReportTemplate(
+            int reportId,
+            [FromForm(Name = "template")] IFormFile data)
+        {
+            if (this.context.Templates.Any(x => x.ReportId == reportId))
+            {
+                return this.BadRequest();
+            }
+
+            var template = new Business.Model.Template { ReportId = reportId, Data = GetBytesFromFile(data) };
+            this.context.Templates.Add(template);
+
+            await context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetReportTemplate), new { reportId }, template.Adapt<TemplateDto>());
+        }
+
+        [HttpPut]
+        public async Task<ActionResult<TemplateDto>> Put(
+            int reportId,
+            [FromForm(Name = "template")] IFormFile data)
+        {
+            var template = await this.context.Templates
+                .FirstOrDefaultAsync(x => x.ReportId == reportId);
+
+            template.Data = GetBytesFromFile(data);
+
+            await context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetReportTemplate), new { reportId }, template.Adapt<TemplateDto>());
+        }
+
+
+        [HttpGet("data")]
         public async Task<IActionResult> Get(int reportId)
         {
             var report = await this.context.Reports
-                .Include(x => x.Template)
+                .Include(x => x.Templates)
                 .Include(x => x.Type)
                 .FirstOrDefaultAsync(x => x.Id == reportId);
 
-            var templateStream = new MemoryStream(report.Template.Data);
+            var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
             switch (report.Type.Name)
             {
@@ -41,14 +86,8 @@
             return BadRequest();
         }
 
-        [HttpPut]
-        public async Task<ActionResult<TemplateDto>> Put(
-            int reportId,
-            [FromForm(Name = "template")] IFormFile data)
+        private byte[] GetBytesFromFile(IFormFile data)
         {
-            var report = await this.context.Reports.Include(x => x.Template)
-                .FirstOrDefaultAsync(x => x.Id == reportId);
-
             byte[] dataBytes;
             using (var templateStream = data.OpenReadStream())
             using (var memoryStream = new MemoryStream())
@@ -57,18 +96,7 @@
                 dataBytes = memoryStream.ToArray();
             }
 
-            if (report.Template == null)
-            {
-                report.Template = new Business.Model.Template { Data = dataBytes };
-            }
-            else
-            {
-                report.Template.Data = dataBytes;
-            }
-
-            await context.SaveChangesAsync();
-
-            return Ok(report.Template.Adapt<TemplateDto>());
+            return dataBytes;
         }
     }
 }
