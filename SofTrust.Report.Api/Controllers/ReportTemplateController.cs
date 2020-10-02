@@ -10,8 +10,9 @@
     using Mapster;
     using System.Linq.Dynamic.Core;
     using System.Linq;
+    using System.Collections.Generic;
 
-    [Route("api/reports/{reportId}/template")]
+    [Route("api/reports/{reportId}/templates")]
     [ApiController]
     public class ReportTemplateController : ControllerBase
     {
@@ -23,10 +24,20 @@
         }
 
         [HttpGet]
-        public async Task<ActionResult<TemplateDto>> GetReportTemplate(int reportId)
+        public async Task<ActionResult<IEnumerable<TemplateDto>>> GetReportTemplates(int reportId)
+        {
+            var templates = await this.context.Templates
+                .Where(x => x.ReportId == reportId)
+                .ToListAsync();
+
+            return this.Ok(templates.Adapt<IEnumerable<TemplateDto>>());
+        }
+
+        [HttpGet("{templateId}")]
+        public async Task<ActionResult<TemplateDto>> GetReportTemplateById(int reportId, int templateId)
         {
             var template = await this.context.Templates
-                .FirstOrDefaultAsync(x => x.ReportId == reportId);
+                .FirstOrDefaultAsync(x => x.Id == templateId);
 
             return this.Ok(template.Adapt<TemplateDto>());
         }
@@ -46,33 +57,56 @@
 
             await context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetReportTemplate), new { reportId }, template.Adapt<TemplateDto>());
+            return CreatedAtAction(nameof(GetReportTemplates), new { reportId }, template.Adapt<TemplateDto>());
         }
 
-        [HttpPut]
-        public async Task<ActionResult<TemplateDto>> Put(
+        [HttpPut("{templateId}")]
+        public async Task<ActionResult<TemplateDto>> UpdateReportTemplate(
             int reportId,
+            int templateId,
             [FromForm(Name = "template")] IFormFile data)
         {
             var template = await this.context.Templates
-                .FirstOrDefaultAsync(x => x.ReportId == reportId);
+                .FirstOrDefaultAsync(x => x.Id == templateId);
 
             template.Data = GetBytesFromFile(data);
 
             await context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetReportTemplate), new { reportId }, template.Adapt<TemplateDto>());
+            return CreatedAtAction(nameof(GetReportTemplates), new { reportId }, template.Adapt<TemplateDto>());
+        }
+
+        [HttpDelete("{templateId}")]
+        public async Task<ActionResult<TemplateDto>> DeleteReportTemplate(int templateId)
+        {
+            var template = await this.context.Templates
+                .FirstOrDefaultAsync(x => x.Id == templateId);
+            if (template == null)
+            {
+                return NotFound();
+            }
+
+            this.context.Templates.Remove(template);
+            await context.SaveChangesAsync();
+
+            return this.Ok();
         }
 
 
-        [HttpGet("data")]
-        public async Task<IActionResult> Get(int reportId)
+        [HttpGet("{templateId}/data")]
+        public async Task<IActionResult> GetReportTemplateData(int reportId, int templateId)
         {
             var report = await this.context.Reports
                 .Include(x => x.Templates)
                 .FirstOrDefaultAsync(x => x.Id == reportId);
 
-            var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
+            var template = report.Templates.FirstOrDefault(x => x.Id == templateId);
+            if (template == null)
+            {
+                return NotFound();
+            }
+
+            var templateStream = new MemoryStream(template.Data);
 
             switch (report.Type)
             {

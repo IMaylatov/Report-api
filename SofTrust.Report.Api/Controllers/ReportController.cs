@@ -6,18 +6,21 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using SofTrust.Report.Business;
-    using SofTrust.Report.Business.Model.Domain;
     using SofTrust.Report.Business.Model.Dto;
+    using SofTrust.Report.Business.Service.Report;
 
     [Route("api/reports")]
     [ApiController]
     public class ReportController : ControllerBase
     {
         private readonly ReportContext context;
+        private readonly ReportService reportService;
 
-        public ReportController(ReportContext reportContext)
+        public ReportController(ReportContext reportContext,
+            ReportService reportService)
         {
             this.context = reportContext;
+            this.reportService = reportService;
         }
         
         [HttpGet]
@@ -57,7 +60,7 @@
         public async Task<ActionResult<ReportDto>> UpdateReport(int id, [FromBody] ReportDto reportDto)
         {
             var report = reportDto.AdaptToDomain();
-            this.context.Entry(report).State = EntityState.Modified;
+            report = await this.reportService.UpdateAsync(report);
             await this.context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
@@ -72,7 +75,7 @@
                 return NotFound();
             }
 
-            context.Reports.Remove(report);
+            this.reportService.DeleteAsync(id);
             await context.SaveChangesAsync();
 
             return this.Ok();

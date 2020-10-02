@@ -47,6 +47,8 @@ namespace SofTrust.Report.Api
 
             services.AddScoped<DataSourceFactory, DataSourceFactory>();
             services.AddScoped<DataSetFactory, DataSetFactory>();
+
+            services.AddScoped<ReportService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

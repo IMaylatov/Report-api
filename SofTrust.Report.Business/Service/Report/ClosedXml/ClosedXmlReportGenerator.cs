@@ -23,7 +23,7 @@
 
         public override FileStreamResult Generate(JToken jReport, Stream bookStream)
         {
-            var parameters = this.GetParameters(jReport["parameters"]);
+            var parameters = this.GetParameters(jReport["variables"]);
 
             var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x));
 

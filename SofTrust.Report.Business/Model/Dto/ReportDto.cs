@@ -21,37 +21,43 @@
             report.ReportDataSources = this.DataSources.Select(x =>
             {
                 var dataSource = x.Adapt<DataSource>();
-                return new ReportDataSource()
+                var reportDataSource = new ReportDataSource()
                 {
                     DataSource = dataSource,
                     DataSourceId = dataSource.Id,
                     Report = report,
                     ReportId = report.Id
                 };
+                dataSource.ReportDataSources = new List<ReportDataSource> { reportDataSource };
+                return reportDataSource;
             }).ToList();
 
             report.ReportDataSets = this.DataSets.Select(x =>
             {
                 var dataSet = x.Adapt<DataSet>();
-                return new ReportDataSet()
+                var reportDataSet = new ReportDataSet()
                 {
                     DataSet = dataSet,
                     DataSetId = dataSet.Id,
                     Report = report,
                     ReportId = report.Id
                 };
+                dataSet.ReportDataSets = new List<ReportDataSet> { reportDataSet };
+                return reportDataSet;
             }).ToList();
 
             report.ReportVariables = this.Variables.Select(x =>
             {
                 var variable = x.Adapt<Variable>();
-                return new ReportVariable()
+                var reportVariable = new ReportVariable()
                 {
                     Variable = variable,
                     VariableId = variable.Id,
                     Report = report,
                     ReportId = report.Id
                 };
+                variable.ReportVariables = new List<ReportVariable> { reportVariable };
+                return reportVariable;
             }).ToList();
 
             return report;
