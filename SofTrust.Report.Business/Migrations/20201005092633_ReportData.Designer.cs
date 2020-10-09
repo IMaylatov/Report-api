@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SofTrust.Report.Business;
@@ -9,9 +10,10 @@ using SofTrust.Report.Business;
 namespace SofTrust.Report.Business.Migrations
 {
     [DbContext(typeof(ReportContext))]
-    partial class ReportContextModelSnapshot : ModelSnapshot
+    [Migration("20201005092633_ReportData")]
+    partial class ReportData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -78,6 +80,10 @@ namespace SofTrust.Report.Business.Migrations
                         .HasColumnName("id")
                         .HasColumnType("integer")
                         .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+                    b.Property<string>("Data")
+                        .HasColumnName("data")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .HasColumnName("name")
@@ -183,8 +189,8 @@ namespace SofTrust.Report.Business.Migrations
                         .HasColumnType("integer")
                         .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
-                    b.Property<string>("Data")
-                        .HasColumnName("data")
+                    b.Property<string>("Kind")
+                        .HasColumnName("kind")
                         .HasColumnType("text");
 
                     b.Property<string>("Label")

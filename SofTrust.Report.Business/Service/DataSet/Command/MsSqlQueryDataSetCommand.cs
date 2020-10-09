@@ -6,6 +6,7 @@
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
+    using System.Text.RegularExpressions;
 
     public class MsSqlQueryDataSetCommand : IDataSetCommand
     {
@@ -30,24 +31,39 @@
         {
             foreach (var parameter in parameters)
             {
-                var newParameterName = parameter.Name.Replace(".", "_");
-
-                switch (parameter.Value.Type)
+                switch (parameter.Type)
                 {
-                    case Newtonsoft.Json.Linq.JTokenType.Array:
+                    case "select":
+                    case "multipleSelect":
                         {
-                            command.CommandText = command.CommandText.Replace($"@{newParameterName}", string.Join(",", parameter.Value));
+                            var keyField = parameter.Data["keyField"].ToString();
+                            var keys = new List<string>();
+                            foreach(var value in parameter.Value)
+                            {
+                                keys.Add(value[keyField].ToString());
+                            }
+                            var stringKeys = string.Join(",", keys);
+                            if (string.IsNullOrWhiteSpace(stringKeys))
+                            {
+                                var dataSetQuery = parameter.Data["dataSet"]["data"]["query"];
+                                stringKeys = $"select {keyField} from ({dataSetQuery}) {parameter.Name}_{keyField}";
+                            }
+                            var filterKeys = $"({keyField} in ({stringKeys}))";
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}.Filtr", filterKeys, RegexOptions.IgnoreCase);
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}.All.{keyField}", stringKeys, RegexOptions.IgnoreCase);
                             break;
                         }
-                    case Newtonsoft.Json.Linq.JTokenType.Date:
+                    case "date":
                         {
-                            command.CommandText = command.CommandText.Replace($"@{newParameterName}.Value", DateTime.Parse(parameter.Value.ToString()).ToString("s"));
-                            command.CommandText = command.CommandText.Replace($"@{newParameterName}", DateTime.Parse(parameter.Value.ToString()).ToString("s"));
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}.Value", 
+                                DateTime.Parse(parameter.Value.ToString()).ToString("s"), RegexOptions.IgnoreCase);
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}", 
+                                DateTime.Parse(parameter.Value.ToString()).ToString("s"), RegexOptions.IgnoreCase);
                             break;
                         }
                     default:
                         {
-                            command.CommandText = command.CommandText.Replace($"@{newParameterName}", parameter.Value.ToString());
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}", parameter.Value.ToString(), RegexOptions.IgnoreCase);
                             break;
                         }
                 }

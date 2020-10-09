@@ -28,17 +28,21 @@
 
         private readonly int timeout;
 
-        public MalibuReportGenerator(IConfiguration configuration)
+        private readonly DataSourceFactory dataSourceFactory;
+
+        public MalibuReportGenerator(IConfiguration configuration,
+            DataSourceFactory dataSourceFactory)
         {
             this.timeout = int.Parse(configuration["XlsxReport:DataSet:SqlQuery:CommandTimeout"]);
+            this.dataSourceFactory = dataSourceFactory;
         }
 
         public override FileStreamResult Generate(JToken jReport, Stream bookStream)
         {
-            var parameters = this.GetParameters(jReport["parameters"]);
+            var parameters = this.GetParameters(jReport["variables"]);
 
-            var dataSource = new MsSqlDataSource(jReport["connection"]["connectionString"].ToString()) { Name = DEFAULT_DATASOURCE_NAME };
-            var dataSources = new List<DataSource>() { dataSource };
+            var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x));
+            var dataSource = dataSources.FirstOrDefault();
 
             var report = this.GetReport(bookStream);
             var reportDesc = report.DeserializeReportDesc();

@@ -17,7 +17,7 @@
         public DataSourceDto AdaptToDto()
         {
             var dataSourceDto = this.Adapt<DataSourceDto>();
-            dataSourceDto.Data = JObject.Parse(this.Data);
+            dataSourceDto.Data = this.Data != null ? JObject.Parse(this.Data) : null;
             return dataSourceDto;
         }
     }

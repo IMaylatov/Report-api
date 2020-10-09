@@ -1,7 +1,5 @@
 ﻿namespace SofTrust.Report.Business.Model.Dto
 {
-    using Newtonsoft.Json.Linq;
-
     public class DataSourceDto
     {
         public int Id { get; set; }

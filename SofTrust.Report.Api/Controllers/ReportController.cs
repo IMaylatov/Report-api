@@ -14,13 +14,13 @@
     public class ReportController : ControllerBase
     {
         private readonly ReportContext context;
-        private readonly ReportService reportService;
+        private readonly ReportRepository reportRepository;
 
         public ReportController(ReportContext reportContext,
-            ReportService reportService)
+            ReportRepository reportRepository)
         {
             this.context = reportContext;
-            this.reportService = reportService;
+            this.reportRepository = reportRepository;
         }
         
         [HttpGet]
@@ -50,7 +50,7 @@
         public async Task<ActionResult<ReportDto>> CreateReport([FromBody] ReportDto reportDto)
         {
             var report = reportDto.AdaptToDomain();
-            this.context.Reports.Add(report);
+            report = this.reportRepository.InsertGraph(report);
             await this.context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
@@ -60,7 +60,7 @@
         public async Task<ActionResult<ReportDto>> UpdateReport(int id, [FromBody] ReportDto reportDto)
         {
             var report = reportDto.AdaptToDomain();
-            report = await this.reportService.UpdateAsync(report);
+            report = this.reportRepository.UpdateGraph(report);
             await this.context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
@@ -69,13 +69,12 @@
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteReport(int id)
         {
-            var report = await context.Reports.FindAsync(id);
-            if (report == null)
+            if (! await context.Reports.AnyAsync(x => x.Id == id))
             {
                 return NotFound();
             }
 
-            this.reportService.DeleteAsync(id);
+            this.reportRepository.DeleteGraph(id);
             await context.SaveChangesAsync();
 
             return this.Ok();

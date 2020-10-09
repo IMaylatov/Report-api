@@ -24,9 +24,7 @@
         public override IDataSetReader ExecuteReader()
         {
             var dataSourceConnection = this.dataSource.CreateConnection();
-            var sqlQuery = query;
-            parameters.ForEach(x => sqlQuery = sqlQuery.Replace($"@{x.Name}", $"@{x.Name.Replace(".", "_")}"));
-            var command = dataSourceConnection.CreateCommand(sqlQuery);
+            var command = dataSourceConnection.CreateCommand(query);
             command.AddParameters(parameters);
             command.Connection.Open();
             command.Timeout = this.timeout;

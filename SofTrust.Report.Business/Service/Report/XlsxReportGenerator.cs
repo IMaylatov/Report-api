@@ -18,6 +18,8 @@
             foreach (var parameter in jParameters.Children())
             {
                 var parameterName = parameter["name"];
+                var parameterType = parameter["type"];
+                var parameterData = parameter["data"];
                 if (parameter["value"].Type == JTokenType.Object)
                 {
                     foreach (JProperty property in parameter["value"])
@@ -27,7 +29,7 @@
                 }
                 else
                 {
-                    parameters.Add(new Parameter { Name = parameterName.ToString(), Value = parameter["value"] });
+                    parameters.Add(new Parameter { Name = parameterName.ToString(), Type = parameterType.ToString(), Data = parameterData, Value = parameter["value"] });
                 }
             }
             return parameters;

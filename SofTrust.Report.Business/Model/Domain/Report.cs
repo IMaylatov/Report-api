@@ -1,6 +1,7 @@
 ﻿namespace SofTrust.Report.Business.Model.Domain
 {
     using Mapster;
+    using Newtonsoft.Json.Linq;
     using SofTrust.Report.Business.Model.Dto;
     using System.Collections.Generic;
     using System.Linq;
@@ -9,7 +10,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Type { get; set; }  
+        public string Type { get; set; }
 
         public ICollection<Template> Templates { get; set; }
         public List<ReportDataSource> ReportDataSources { get; set; }
@@ -25,7 +26,7 @@
 
             reportDto.DataSets = this.ReportDataSets.Select(x => x.DataSet.AdaptToDto()).ToList();
 
-            reportDto.Variables = this.ReportVariables.Select(x => x.Variable.Adapt<VariableDto>()).ToList();
+            reportDto.Variables = this.ReportVariables.Select(x => x.Variable.AdaptToDto()).ToList();
 
             return reportDto;
         }

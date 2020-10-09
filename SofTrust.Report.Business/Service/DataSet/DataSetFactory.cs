@@ -32,5 +32,10 @@
             }
             return null;
         }
+
+        public DataSet CreateSqlQueryDataSet(string query, DataSource dataSource)
+        {
+            return new SqlQueryDataSet(dataSource, query, new Parameter[] { }, timeout);
+        }
     }
 }

@@ -35,6 +35,8 @@
 
         private MAINReportVersionInfo[] reportVersionInfoField;
 
+        private MAINPARAM[] pARAMField;
+
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
         public string FixedPath
@@ -88,6 +90,110 @@
             set
             {
                 this.reportVersionInfoField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute("PARAM", Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public MAINPARAM[] PARAM
+        {
+            get
+            {
+                return this.pARAMField;
+            }
+            set
+            {
+                this.pARAMField = value;
+            }
+        }
+    }
+
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.6.1055.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true)]
+    public partial class MAINPARAM
+    {
+
+        private string qUERY_STRINGField;
+
+        private string pARAM_TYPEField;
+
+        private string dOCGUIDField;
+
+        private string rEQUIREDField;
+
+        private string nAMEField;
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public string QUERY_STRING
+        {
+            get
+            {
+                return this.qUERY_STRINGField;
+            }
+            set
+            {
+                this.qUERY_STRINGField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public string PARAM_TYPE
+        {
+            get
+            {
+                return this.pARAM_TYPEField;
+            }
+            set
+            {
+                this.pARAM_TYPEField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public string DOCGUID
+        {
+            get
+            {
+                return this.dOCGUIDField;
+            }
+            set
+            {
+                this.dOCGUIDField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute(Form = System.Xml.Schema.XmlSchemaForm.Unqualified)]
+        public string REQUIRED
+        {
+            get
+            {
+                return this.rEQUIREDField;
+            }
+            set
+            {
+                this.rEQUIREDField = value;
+            }
+        }
+
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string NAME
+        {
+            get
+            {
+                return this.nAMEField;
+            }
+            set
+            {
+                this.nAMEField = value;
             }
         }
     }
