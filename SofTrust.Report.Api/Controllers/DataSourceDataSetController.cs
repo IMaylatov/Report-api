@@ -1,11 +1,10 @@
 ﻿namespace SofTrust.Report.Api.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-    using SofTrust.Report.Business;
-    using SofTrust.Report.Business.Service.DataSet;
-    using SofTrust.Report.Business.Service.DataSource;
+    using SofTrust.Report.Core.Generator.DataReader;
+    using SofTrust.Report.Core.Generator.Source;
+    using SofTrust.Report.Infrastructure;
     using System.Collections.Generic;
-    using SofTrust.Report.Service;
     using System.Threading.Tasks;
 
     [Route("api/dataSources/{dataSourceId}/dataSets")]
@@ -13,12 +12,12 @@
     public class DataSourceDataSetController : ControllerBase
     {
         private readonly ReportContext context;
-        private readonly DataSourceFactory dataSourceFactory;
-        private readonly DataSetFactory dataSetFactory;
+        private readonly SourceFactory dataSourceFactory;
+        private readonly DataReaderFactory dataSetFactory;
 
         public DataSourceDataSetController(ReportContext reportContext,
-            DataSourceFactory dataSourceFactory,
-            DataSetFactory dataSetFactory)
+            SourceFactory dataSourceFactory,
+            DataReaderFactory dataSetFactory)
         {
             this.context = reportContext;
             this.dataSourceFactory = dataSourceFactory;
@@ -33,7 +32,7 @@
             query = $"select top {take} * from ({query}) {valueField}Tmp where {valueField} like '%{value}%'";
             var dataSet = dataSetFactory.CreateSqlQueryDataSet(query, dataSourceE);
 
-            var reader = dataSet.ExecuteReader();
+            var reader = dataSet.CreateReader();
             var datas = new List<Dictionary<string, object>>();
             while (reader.Read())
             {

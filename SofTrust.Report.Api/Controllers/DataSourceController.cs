@@ -3,9 +3,9 @@
     using Mapster;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
-    using SofTrust.Report.Business;
-    using SofTrust.Report.Business.Model.Domain;
-    using SofTrust.Report.Business.Model.Dto;
+    using SofTrust.Report.Core.Models.Domain;
+    using SofTrust.Report.Core.Models.Dto;
+    using SofTrust.Report.Infrastructure;
     using System.Collections.Generic;
     using System.Threading.Tasks;
 

@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SofTrust.Report.Business\SofTrust.Report.Business.csproj" />
+    <ProjectReference Include="..\SofTrust.Report.Infrastructure\SofTrust.Report.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

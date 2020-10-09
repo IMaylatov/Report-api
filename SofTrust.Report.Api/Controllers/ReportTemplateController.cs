@@ -2,15 +2,16 @@
 {
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
-    using SofTrust.Report.Business;
     using System.Threading.Tasks;
     using Microsoft.EntityFrameworkCore;
     using System.IO;
-    using SofTrust.Report.Business.Model.Dto;
     using Mapster;
     using System.Linq.Dynamic.Core;
     using System.Linq;
     using System.Collections.Generic;
+    using SofTrust.Report.Infrastructure;
+    using SofTrust.Report.Core.Models.Dto;
+    using SofTrust.Report.Core.Models.Domain;
 
     [Route("api/reports/{reportId}/templates")]
     [ApiController]
@@ -52,7 +53,7 @@
                 return this.BadRequest();
             }
 
-            var template = new Business.Model.Domain.Template { ReportId = reportId, Data = GetBytesFromFile(data) };
+            var template = new Template { ReportId = reportId, Data = GetBytesFromFile(data) };
             this.context.Templates.Add(template);
 
             await context.SaveChangesAsync();

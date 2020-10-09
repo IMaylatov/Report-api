@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using SofTrust.Report.Business;
-using SofTrust.Report.Business.Service.DataSet;
-using SofTrust.Report.Business.Service.DataSource;
-using SofTrust.Report.Business.Service.Report;
-using SofTrust.Report.Business.Service.Report.ClosedXml;
-using SofTrust.Report.Business.Service.Report.Malibu;
+using SofTrust.Report.Core.Generator.DataReader;
+using SofTrust.Report.Core.Generator.Report;
+using SofTrust.Report.Core.Generator.Report.ClosedXml;
+using SofTrust.Report.Core.Generator.Report.Malibu;
+using SofTrust.Report.Core.Generator.Source;
+using SofTrust.Report.Infrastructure;
+using SofTrust.Report.Infrastructure.Repository;
 
 namespace SofTrust.Report.Api
 {
@@ -45,8 +39,8 @@ namespace SofTrust.Report.Api
             services.AddScoped<ClosedXmlReportGenerator, ClosedXmlReportGenerator>();
             services.AddScoped<MalibuReportGenerator, MalibuReportGenerator>();
 
-            services.AddScoped<DataSourceFactory, DataSourceFactory>();
-            services.AddScoped<DataSetFactory, DataSetFactory>();
+            services.AddScoped<SourceFactory, SourceFactory>();
+            services.AddScoped<DataReaderFactory, DataReaderFactory>();
 
             services.AddScoped<ReportRepository>();
         }

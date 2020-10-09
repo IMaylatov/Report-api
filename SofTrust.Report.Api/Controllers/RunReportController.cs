@@ -4,8 +4,8 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json.Linq;
-    using SofTrust.Report.Business;
-    using SofTrust.Report.Business.Service.Report;
+    using SofTrust.Report.Core.Generator.Report;
+    using SofTrust.Report.Infrastructure;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;

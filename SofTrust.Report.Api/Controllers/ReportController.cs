@@ -5,9 +5,9 @@
     using Mapster;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
-    using SofTrust.Report.Business;
-    using SofTrust.Report.Business.Model.Dto;
-    using SofTrust.Report.Business.Service.Report;
+    using SofTrust.Report.Core.Models.Dto;
+    using SofTrust.Report.Infrastructure;
+    using SofTrust.Report.Infrastructure.Repository;
 
     [Route("api/reports")]
     [ApiController]
