@@ -2,8 +2,6 @@
 {
     public interface ISource
     {
-        string Name { get; set; }
-
         IConnection CreateConnection();
     }
 }

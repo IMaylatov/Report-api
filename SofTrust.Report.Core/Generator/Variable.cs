@@ -2,7 +2,7 @@
 {
     using Newtonsoft.Json.Linq;
 
-    public class Parameter
+    public class Variable
     {
         public string Name { get; set; }
         public string Type { get; set; }

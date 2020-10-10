@@ -2,7 +2,6 @@
 {
     public interface IDataReader
     {
-        string Name { get; set; }
         IData CreateReader();
     }
 }

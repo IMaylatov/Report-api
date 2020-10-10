@@ -6,7 +6,7 @@
     {
         IConnection Connection { get; set; }
         IData ExecuteReader();
-        void AddParameters(IEnumerable<Parameter> parameters);
+        void AddVariables(IEnumerable<Variable> parameters);
         int Timeout { set; }
     }
 }

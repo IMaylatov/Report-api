@@ -6,7 +6,6 @@
     using System.Text.RegularExpressions;
     using System.Xml.Serialization;
     using ClosedXML.Excel;
-    using Microsoft.AspNetCore.Mvc;
     using MoreLinq;
     using Newtonsoft.Json.Linq;
     using Microsoft.Extensions.Configuration;
@@ -35,9 +34,9 @@
             this.dataSourceFactory = dataSourceFactory;
         }
 
-        public override FileStreamResult Generate(JToken jReport, Stream bookStream)
+        public override Stream Generate(JToken jReport, Stream bookStream)
         {
-            var parameters = this.GetParameters(jReport["variables"]);
+            var variables = this.GetVariables(jReport["variables"]);
 
             var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x));
             var dataSource = dataSources.FirstOrDefault();
@@ -46,17 +45,17 @@
             var reportDesc = report.DeserializeReportDesc();
             var reportBook = report.DeserializeReportTemplate();
 
-            var dataSets = reportDesc.DATASET.Select(x => new SqlQueryDataReader(dataSource, x.SQL, parameters, timeout) { Name = x.NAME });
+            var dataSets = reportDesc.DATASET.ToDictionary(x => x.NAME, x => new SqlQueryDataReader(dataSource, x.SQL, variables, timeout) as IDataReader);
 
             var datas = this.GetDatas(dataSets);
 
-            FillBookData(parameters, datas, reportBook, reportDesc.DATASET);
+            FillBookData(variables, datas, reportBook, reportDesc.DATASET);
 
             var reportStream = new MemoryStream();
             reportBook.SaveAs(reportStream);
             reportStream.Position = 0;
 
-            return this.GetXlsxFileStreamResult(reportStream);
+            return reportStream;
         }
 
         private Report GetReport(Stream template)
@@ -65,7 +64,7 @@
             return serializer.Deserialize(template) as Report;
         }
 
-        private void FillBookData(IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)
+        private void FillBookData(IEnumerable<Variable> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)
         {
             var shiftRanges = 0;
             book.Worksheets
@@ -74,7 +73,7 @@
                         .ForEach(cell => this.ConvertCellMalibuToClosedXml(cell, parameters, datas, dataSetDescs, ref shiftRanges))));
         }
 
-        private void ConvertCellMalibuToClosedXml(IXLCell cell, IEnumerable<Parameter> parameters, Dictionary<string, List<Dictionary<string, object>>> datas,
+        private void ConvertCellMalibuToClosedXml(IXLCell cell, IEnumerable<Variable> parameters, Dictionary<string, List<Dictionary<string, object>>> datas,
             MAINDATASET[] dataSetDescs, ref int shiftRanges)
         {
             string cellValue;
@@ -94,7 +93,7 @@
             }
         }
 
-        private void HandleCellValue(IEnumerable<Parameter> parameters, IXLCell cell, string cellValue)
+        private void HandleCellValue(IEnumerable<Variable> parameters, IXLCell cell, string cellValue)
         {
             var matches = PARAM_REGEX.Matches(cellValue);
             if (matches.Count > 0)

@@ -6,9 +6,14 @@
     using SofTrust.Report.Core.Generator;
     using System.Data.SqlClient;
     using SofTrust.Report.Core.Generator.Data;
+    using System.Linq;
 
     public class MsSqlQueryDataSetCommand : ICommand
     {
+        private const string VARIABLE_TYPE_MULTIPLE_SELECT = "multipleSelect";
+        private const string VARIABLE_TYPE_SELECT = "select";
+        private const string VARIABLE_TYPE_DATE = "date";
+
         private SqlCommand command;
 
         public IConnection Connection { get; set; }
@@ -26,43 +31,44 @@
             return new SqlData(command.ExecuteReader());
         }
 
-        public void AddParameters(IEnumerable<Parameter> parameters)
+        public void AddVariables(IEnumerable<Variable> variables)
         {
-            foreach (var parameter in parameters)
+            foreach (var variable in variables)
             {
-                switch (parameter.Type)
+                switch (variable.Type)
                 {
-                    case "select":
-                    case "multipleSelect":
+                    case VARIABLE_TYPE_MULTIPLE_SELECT:
                         {
-                            var keyField = parameter.Data["keyField"].ToString();
+                            var keyField = variable.Data["keyField"].ToString();
                             var keys = new List<string>();
-                            foreach(var value in parameter.Value)
+                            foreach (var value in variable.Value)
                             {
                                 keys.Add(value[keyField].ToString());
                             }
                             var stringKeys = string.Join(",", keys);
                             if (string.IsNullOrWhiteSpace(stringKeys))
                             {
-                                var dataSetQuery = parameter.Data["dataSet"]["data"]["query"];
-                                stringKeys = $"select {keyField} from ({dataSetQuery}) {parameter.Name}_{keyField}";
+                                var dataSetQuery = variable.Data["dataSet"]["data"]["query"];
+                                stringKeys = $"select {keyField} from ({dataSetQuery}) {variable.Name}_{keyField}";
                             }
                             var filterKeys = $"({keyField} in ({stringKeys}))";
-                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}.Filtr", filterKeys, RegexOptions.IgnoreCase);
-                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}.All.{keyField}", stringKeys, RegexOptions.IgnoreCase);
+
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{variable.Name}.Filtr", filterKeys, RegexOptions.IgnoreCase);
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{variable.Name}.All.{keyField}", stringKeys, RegexOptions.IgnoreCase);
                             break;
                         }
-                    case "date":
+                    case VARIABLE_TYPE_DATE:
                         {
-                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}.Value", 
-                                DateTime.Parse(parameter.Value.ToString()).ToString("s"), RegexOptions.IgnoreCase);
-                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}", 
-                                DateTime.Parse(parameter.Value.ToString()).ToString("s"), RegexOptions.IgnoreCase);
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{variable.Name}.Value", 
+                                DateTime.Parse(variable.Value.ToString()).ToString("s"), RegexOptions.IgnoreCase);
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{variable.Name}", 
+                                DateTime.Parse(variable.Value.ToString()).ToString("s"), RegexOptions.IgnoreCase);
                             break;
                         }
+                    case VARIABLE_TYPE_SELECT:
                     default:
                         {
-                            command.CommandText = Regex.Replace(command.CommandText, $"@{parameter.Name}", parameter.Value.ToString(), RegexOptions.IgnoreCase);
+                            command.CommandText = Regex.Replace(command.CommandText, $"@{variable.Name}", variable.Value.ToString(), RegexOptions.IgnoreCase);
                             break;
                         }
                 }

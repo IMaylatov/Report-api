@@ -1,6 +1,5 @@
 ﻿namespace SofTrust.Report.Core.Generator.Report.ClosedXml
 {
-    using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
     using System.Linq;
     using System.IO;
@@ -21,19 +20,19 @@
             this.dataSetFactory = dataSetFactory;
         }
 
-        public override FileStreamResult Generate(JToken jReport, Stream bookStream)
+        public override Stream Generate(JToken jReport, Stream bookStream)
         {
-            var parameters = this.GetParameters(jReport["variables"]);
+            var variables = this.GetVariables(jReport["variables"]);
 
-            var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x));
+            var dataSources = jReport["dataSources"].ToDictionary(x => x["name"].ToString(), x => dataSourceFactory.Create(x));
 
-            var dataSets = jReport["dataSets"].Select(x => dataSetFactory.Create(x, dataSources, parameters));
+            var dataSets = jReport["dataSets"].ToDictionary(x => x["name"].ToString(), x => dataSetFactory.Create(x, dataSources, variables));
 
             var datas = this.GetDatas(dataSets);
 
             var reportStream = this.GenerateClosedXmlReport(bookStream, datas);
 
-            return this.GetXlsxFileStreamResult(reportStream);
+            return reportStream;
         }
 
         private Stream GenerateClosedXmlReport(Stream bookStream, Dictionary<string, List<Dictionary<string, object>>> datas)

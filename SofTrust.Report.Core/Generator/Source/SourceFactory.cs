@@ -5,8 +5,8 @@
 
     public class SourceFactory
     {
-        const string DATASOURCE_TYPE_MSSQL = "MsSql";
-        const string DATASOURCE_TYPE_POSTGRESQL = "PostgreSql";
+        const string DATASOURCE_TYPE_MSSQL = "msSql";
+        const string DATASOURCE_TYPE_POSTGRESQL = "postgreSql";
 
         public ISource Create(JToken dataSource)
         {

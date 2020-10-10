@@ -7,8 +7,8 @@
 
     public class ReportGeneratorFactory
     {
-        private const string TEMPLATE_TYPE_CLOSEDXML = "ClosedXml";
-        private const string TEMPLATE_TYPE_MALIBU = "Malibu";
+        private const string TEMPLATE_TYPE_CLOSEDXML = "closedXml";
+        private const string TEMPLATE_TYPE_MALIBU = "malibu";
 
         private readonly IServiceProvider provider;
 

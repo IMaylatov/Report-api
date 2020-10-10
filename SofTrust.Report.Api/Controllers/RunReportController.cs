@@ -35,7 +35,8 @@
             var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
             using (var templateStream = template.OpenReadStream())
             {
-                return reportGenerator.Generate(report, templateStream);
+                var reportStream = reportGenerator.Generate(report, templateStream);
+                return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
             }
         }
 
@@ -51,7 +52,8 @@
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report.Type);
-            return reportGenerator.Generate(reportJ, templateStream);
+            var reportStream = reportGenerator.Generate(reportJ, templateStream);
+            return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
         }
     }
 }

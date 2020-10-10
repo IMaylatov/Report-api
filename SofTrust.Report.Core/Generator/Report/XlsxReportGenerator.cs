@@ -1,6 +1,5 @@
 ﻿namespace SofTrust.Report.Core.Generator.Report
 {
-    using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Linq;
     using System.IO;
     using System.Linq;
@@ -8,32 +7,34 @@
 
     public abstract class XlsxReportGenerator : IReportGenerator
     {
-        public abstract FileStreamResult Generate(JToken report, Stream template);
+        public abstract Stream Generate(JToken report, Stream template);
 
-        protected IEnumerable<Parameter> GetParameters(JToken jParameters)
+        protected IEnumerable<Variable> GetVariables(JToken jVariables)
         {
-            var parameters = new List<Parameter>();
-            foreach (var parameter in jParameters.Children())
+            var variables = new List<Variable>();
+            foreach (var variable in jVariables.Children())
             {
-                var parameterName = parameter["name"];
-                var parameterType = parameter["type"];
-                var parameterData = parameter["data"];
-                if (parameter["value"].Type == JTokenType.Object)
+                if (variable["value"].Type == JTokenType.Object)
                 {
-                    foreach (JProperty property in parameter["value"])
+                    foreach (JProperty property in variable["value"])
                     {
-                        this.GetParameters(parameterName.ToString(), property, parameters);
+                        this.GetVariables(variable["name"].ToString(), property, variables);
                     }
                 }
                 else
                 {
-                    parameters.Add(new Parameter { Name = parameterName.ToString(), Type = parameterType.ToString(), Data = parameterData, Value = parameter["value"] });
+                    variables.Add(
+                        new Variable {
+                            Name = variable["name"].ToString(), 
+                            Type = variable["type"].ToString(), 
+                            Data = variable["data"], 
+                            Value = variable["value"] });
                 }
             }
-            return parameters;
+            return variables;
         }
 
-        private void GetParameters(string prefix, JProperty parentProperty, List<Parameter> parameters)
+        private void GetVariables(string prefix, JProperty parentProperty, List<Variable> variables)
         {
             foreach (var property in parentProperty)
             {
@@ -41,22 +42,22 @@
                 {
                     foreach (JProperty childProperty in property)
                     {
-                        this.GetParameters($"{prefix}.{parentProperty.Name}", childProperty, parameters);
+                        this.GetVariables($"{prefix}.{parentProperty.Name}", childProperty, variables);
                     }
                 }
                 else
                 {
-                    parameters.Add(new Parameter { Name = $"{prefix}.{parentProperty.Name}", Value = property });
+                    variables.Add(new Variable { Name = $"{prefix}.{parentProperty.Name}", Value = property });
                 }
             }
         }
 
-        protected Dictionary<string, List<Dictionary<string, object>>> GetDatas(IEnumerable<IDataReader> dataSets)
+        protected Dictionary<string, List<Dictionary<string, object>>> GetDatas(Dictionary<string, IDataReader> dataSets)
         {
             return dataSets
-               .ToDictionary(x => x.Name.ToLower(), x =>
+               .ToDictionary(x => x.Key.ToLower(), x =>
                {
-                   var reader = x.CreateReader();
+                   var reader = x.Value.CreateReader();
                    var datas = new List<Dictionary<string, object>>();
                    while (reader.Read())
                    {
@@ -76,11 +77,6 @@
 
                    return datas;
                });
-        }
-
-        protected FileStreamResult GetXlsxFileStreamResult(Stream stream)
-        {
-            return new FileStreamResult(stream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
         }
     }
 }
