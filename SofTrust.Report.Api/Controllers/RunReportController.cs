@@ -28,23 +28,27 @@
         [HttpPost]
         public IActionResult Run(
             [FromForm(Name = "report")] string reportJson,
-            [FromForm(Name = "template")] IFormFile template)
+            [FromForm(Name = "template")] IFormFile template,
+            [FromForm(Name = "variables")] string variableJson)
         {
             var report = JToken.Parse(reportJson);
+            var variables = JToken.Parse(variableJson);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
             using (var templateStream = template.OpenReadStream())
             {
-                var reportStream = reportGenerator.Generate(report, templateStream);
+                var reportStream = reportGenerator.Generate(report, templateStream, variables);
                 return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
             }
         }
 
         [HttpPost("{id}")]
         public async Task<IActionResult> Run(int id,
-            [FromForm(Name = "report")] string reportJson)
+            [FromForm(Name = "report")] string reportJson,
+            [FromForm(Name = "variables")] string variableJson)
         {
             var reportJ = JToken.Parse(reportJson);
+            var variables = JToken.Parse(variableJson);
 
             var report = await this.context.Reports
                 .Include(x => x.Templates)
@@ -52,7 +56,7 @@
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report.Type);
-            var reportStream = reportGenerator.Generate(reportJ, templateStream);
+            var reportStream = reportGenerator.Generate(reportJ, templateStream, variables);
             return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
         }
     }

@@ -111,9 +111,9 @@
 
             switch (report.Type)
             {
-                case "ClosedXml":
+                case "closedXml":
                     return new FileStreamResult(templateStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
-                case "Malibu":
+                case "malibu":
                     return new FileStreamResult(templateStream, "application/octet-stream") { FileDownloadName = $"report.mlbrpt" };
             }
 
