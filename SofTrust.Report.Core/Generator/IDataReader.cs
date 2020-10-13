@@ -2,6 +2,6 @@
 {
     public interface IDataReader
     {
-        IData CreateReader();
+        IData GetData();
     }
 }

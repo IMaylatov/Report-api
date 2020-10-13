@@ -7,6 +7,7 @@
     using ClosedXML.Report;
     using SofTrust.Report.Core.Generator.Source;
     using SofTrust.Report.Core.Generator.DataReader;
+    using SofTrust.Report.Core.Generator.DataAdapter;
 
     public class ClosedXmlReportGenerator : XlsxReportGenerator
     {
@@ -28,7 +29,8 @@
 
             var dataSets = jReport["dataSets"].ToDictionary(x => x["name"].ToString(), x => dataSetFactory.Create(x, dataSources, variables));
 
-            var datas = this.GetDatas(dataSets);
+            var datas = dataSets
+               .ToDictionary(x => x.Key.ToLower(), x => x.Value.GetData().ToListDictionaryAdapt());
 
             var reportStream = this.GenerateClosedXmlReport(bookStream, datas);
 

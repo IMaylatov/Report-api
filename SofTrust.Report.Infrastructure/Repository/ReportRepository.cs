@@ -1,7 +1,9 @@
 ﻿namespace SofTrust.Report.Infrastructure.Repository
 {
+    using DocumentFormat.OpenXml.Office2010.ExcelAc;
     using Microsoft.EntityFrameworkCore;
     using SofTrust.Report.Core.Models.Domain;
+    using System.Collections.Generic;
     using System.Linq;
 
     public class ReportRepository
@@ -46,6 +48,8 @@
                        .FirstOrDefault(x => x.Id == report.Id);
 
             context.Entry(existingReport).CurrentValues.SetValues(report);
+
+            var addedReportDataSources = new List<ReportDataSource>();
             foreach (var reportDataSource in report.ReportDataSources)
             {
                 var existingReportDataSource = existingReport.ReportDataSources
@@ -53,7 +57,7 @@
 
                 if (existingReportDataSource == null)
                 {
-                    existingReport.ReportDataSources.Add(reportDataSource);
+                    addedReportDataSources.Add(reportDataSource);
                 }
                 else
                 {
@@ -61,14 +65,17 @@
                     context.Entry(existingReportDataSource.DataSource).CurrentValues.SetValues(reportDataSource.DataSource);
                 }
             }
-            foreach(var reportDataSet in report.ReportDataSets)
+            existingReport.ReportDataSources.AddRange(addedReportDataSources);
+
+            var addedReportDataSets = new List<ReportDataSet>();
+            foreach (var reportDataSet in report.ReportDataSets)
             {
                 var existingReportDataSet = existingReport.ReportDataSets
                     .FirstOrDefault(p => p.DataSetId == reportDataSet.DataSetId);
 
                 if (existingReportDataSet == null)
                 {
-                    existingReport.ReportDataSets.Add(reportDataSet);
+                    addedReportDataSets.Add(reportDataSet);
                 }
                 else
                 {
@@ -76,6 +83,9 @@
                     context.Entry(existingReportDataSet.DataSet).CurrentValues.SetValues(reportDataSet.DataSet);
                 }
             }
+            existingReport.ReportDataSets.AddRange(addedReportDataSets);
+
+            var addedVariables = new List<ReportVariable>();
             foreach (var reportVariable in report.ReportVariables)
             {
                 var existingReportVariable = existingReport.ReportVariables
@@ -83,7 +93,7 @@
 
                 if (existingReportVariable == null)
                 {
-                    existingReport.ReportVariables.Add(reportVariable);
+                    addedVariables.Add(reportVariable);
                 }
                 else
                 {
@@ -91,6 +101,7 @@
                     context.Entry(existingReportVariable.Variable).CurrentValues.SetValues(reportVariable.Variable);
                 }
             }
+            existingReport.ReportVariables.AddRange(addedVariables);
 
             foreach (var reportDataSources in existingReport.ReportDataSources)
             {

@@ -2,7 +2,6 @@
 {
     using Newtonsoft.Json.Linq;
     using System.IO;
-    using System.Linq;
     using System.Collections.Generic;
 
     public abstract class XlsxReportGenerator : IReportGenerator
@@ -50,33 +49,6 @@
                     variables.Add(new Variable { Name = $"{prefix}.{parentProperty.Name}", Value = property });
                 }
             }
-        }
-
-        protected Dictionary<string, List<Dictionary<string, object>>> GetDatas(Dictionary<string, IDataReader> dataSets)
-        {
-            return dataSets
-               .ToDictionary(x => x.Key.ToLower(), x =>
-               {
-                   var reader = x.Value.CreateReader();
-                   var datas = new List<Dictionary<string, object>>();
-                   while (reader.Read())
-                   {
-                       var data = new Dictionary<string, object>();
-                       var unnamedColumnIndex = 1;
-                       for (int i = 0; i < reader.FieldCount; i++)
-                       {
-                           var fieldName = reader.GetName(i);
-                           if (string.IsNullOrWhiteSpace(fieldName))
-                           {
-                               fieldName = $"Column{unnamedColumnIndex++}";
-                           }
-                           data.Add(data.ContainsKey(fieldName) ? $"{fieldName}{i}" : fieldName, reader.GetValue(i));
-                       }
-                       datas.Add(data);
-                   }
-
-                   return datas;
-               });
         }
     }
 }

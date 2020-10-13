@@ -17,7 +17,7 @@
             this.timeout = timeout;
         }
 
-        public IData CreateReader()
+        public IData GetData()
         {
             var dataSourceConnection = this.dataSource.CreateConnection();
             var command = dataSourceConnection.CreateCommand(query);

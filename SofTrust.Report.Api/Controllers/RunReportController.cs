@@ -4,10 +4,12 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using Newtonsoft.Json.Linq;
+    using Newtonsoft.Json.Serialization;
     using SofTrust.Report.Core.Generator.Report;
     using SofTrust.Report.Infrastructure;
     using System.IO;
     using System.Linq;
+    using System.Text.Json;
     using System.Threading.Tasks;
 
     [Route("api/run/report")]
@@ -44,15 +46,20 @@
 
         [HttpPost("{id}")]
         public async Task<IActionResult> Run(int id,
-            [FromForm(Name = "report")] string reportJson,
             [FromForm(Name = "variables")] string variableJson)
         {
-            var reportJ = JToken.Parse(reportJson);
             var variables = JToken.Parse(variableJson);
 
             var report = await this.context.Reports
+                .Include(x => x.ReportDataSources).ThenInclude(x => x.DataSource)
+                .Include(x => x.ReportDataSets).ThenInclude(x => x.DataSet)
+                .Include(x => x.ReportVariables).ThenInclude(x => x.Variable)
                 .Include(x => x.Templates)
                 .FirstOrDefaultAsync(x => x.Id == id);
+            var reportDto = report.AdaptToDto();
+            var serializer = new Newtonsoft.Json.JsonSerializer();
+            serializer.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            var reportJ = JToken.FromObject(reportDto, serializer);
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report.Type);

@@ -6,51 +6,34 @@
     using SofTrust.Report.Infrastructure;
     using System.Collections.Generic;
     using System.Threading.Tasks;
+    using SofTrust.Report.Core.Generator.DataAdapter;
 
     [Route("api/dataSources/{dataSourceId}/dataSets")]
     [ApiController]
     public class DataSourceDataSetController : ControllerBase
     {
         private readonly ReportContext context;
-        private readonly SourceFactory dataSourceFactory;
-        private readonly DataReaderFactory dataSetFactory;
+        private readonly SourceFactory sourceFactory;
+        private readonly DataReaderFactory dataReaderFactory;
 
         public DataSourceDataSetController(ReportContext reportContext,
-            SourceFactory dataSourceFactory,
-            DataReaderFactory dataSetFactory)
+            SourceFactory sourceFactory,
+            DataReaderFactory dataReaderFactory)
         {
             this.context = reportContext;
-            this.dataSourceFactory = dataSourceFactory;
-            this.dataSetFactory = dataSetFactory;
+            this.sourceFactory = sourceFactory;
+            this.dataReaderFactory = dataReaderFactory;
         }
 
         [HttpGet("sqlQuery/items")]
         public async Task<ActionResult<IEnumerable<object>>> GetSqlQueryItems(int dataSourceId, string query, string valueField, string value, int take)
         {
             var dataSource = await this.context.DataSources.FindAsync(dataSourceId);
-            var dataSourceE = dataSourceFactory.Create(dataSource);
+            var source = sourceFactory.Create(dataSource);
             query = $"select top {take} * from ({query}) {valueField}Tmp where {valueField} like '%{value}%'";
-            var dataSet = dataSetFactory.CreateSqlQueryDataSet(query, dataSourceE);
+            var dataReader = dataReaderFactory.CreateSqlQueryDataSet(query, source);
 
-            var reader = dataSet.CreateReader();
-            var datas = new List<Dictionary<string, object>>();
-            while (reader.Read())
-            {
-                var data = new Dictionary<string, object>();
-                var unnamedColumnIndex = 1;
-                for (int i = 0; i < reader.FieldCount; i++)
-                {
-                    var fieldName = reader.GetName(i);
-                    if (string.IsNullOrWhiteSpace(fieldName))
-                    {
-                        fieldName = $"Column{unnamedColumnIndex++}";
-                    }
-                    data.Add(data.ContainsKey(fieldName) ? $"{fieldName}{i}" : fieldName, reader.GetValue(i));
-                }
-                datas.Add(data);
-            }
-
-            return datas;
+            return dataReader.GetData().ToListDictionaryAdapt();
         }
     }
 }

@@ -12,6 +12,7 @@
     using System;
     using SofTrust.Report.Core.Generator.Source;
     using SofTrust.Report.Core.Generator.DataReader;
+    using SofTrust.Report.Core.Generator.DataAdapter;
 
     public class MalibuReportGenerator : XlsxReportGenerator
     {
@@ -47,7 +48,8 @@
 
             var dataSets = reportDesc.DATASET.ToDictionary(x => x.NAME, x => new SqlQueryDataReader(dataSource, x.SQL, variables, timeout) as IDataReader);
 
-            var datas = this.GetDatas(dataSets);
+            var datas = dataSets
+               .ToDictionary(x => x.Key.ToLower(), x => x.Value.GetData().ToListDictionaryAdapt());
 
             FillBookData(variables, datas, reportBook, reportDesc.DATASET);
 
