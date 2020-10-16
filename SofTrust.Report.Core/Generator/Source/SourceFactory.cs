@@ -1,7 +1,6 @@
 ﻿namespace SofTrust.Report.Core.Generator.Source
 {
     using Newtonsoft.Json.Linq;
-    using SofTrust.Report.Core.Models.Domain;
 
     public class SourceFactory
     {
@@ -10,16 +9,10 @@
 
         public ISource Create(JToken dataSource)
         {
-            return Create(dataSource["type"].ToString(), dataSource["name"].ToString(), dataSource["data"]);
+            return Create(dataSource["name"].ToString(), dataSource["type"].ToString(), dataSource["data"]);
         }
 
-        public ISource Create(DataSource dataSource)
-        {
-            var dataJ = JToken.Parse(dataSource.Data);
-            return Create(dataSource.Type, dataSource.Name, dataJ);
-        }
-
-        private ISource Create(string type, string name, JToken data)
+        public ISource Create(string name, string type, JToken data)
         {
             switch (type)
             {

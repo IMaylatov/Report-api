@@ -1,22 +1,23 @@
 ﻿namespace SofTrust.Report.Api.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
+    using Newtonsoft.Json.Linq;
+    using SofTrust.Report.Core.Generator.DataAdapter;
     using SofTrust.Report.Core.Generator.DataReader;
     using SofTrust.Report.Core.Generator.Source;
+    using SofTrust.Report.Core.Models.Dto;
     using SofTrust.Report.Infrastructure;
     using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using SofTrust.Report.Core.Generator.DataAdapter;
 
-    [Route("api/dataSources/{dataSourceId}/dataSets")]
+    [Route("api/variableType")]
     [ApiController]
-    public class DataSourceDataSetController : ControllerBase
+    public class VariableTypes : ControllerBase
     {
         private readonly ReportContext context;
         private readonly SourceFactory sourceFactory;
         private readonly DataReaderFactory dataReaderFactory;
 
-        public DataSourceDataSetController(ReportContext reportContext,
+        public VariableTypes(ReportContext reportContext,
             SourceFactory sourceFactory,
             DataReaderFactory dataReaderFactory)
         {
@@ -25,11 +26,17 @@
             this.dataReaderFactory = dataReaderFactory;
         }
 
-        [HttpGet("sqlQuery/items")]
-        public async Task<ActionResult<IEnumerable<object>>> GetSqlQueryItems(int dataSourceId, string query, string valueField, string value, int take)
+        [HttpPost("select/data")]
+        public ActionResult<IEnumerable<object>> GetSelectData(
+            [FromForm(Name = "dataSource")] string dataSourceString,
+            [FromForm(Name = "query")] string query,
+            [FromForm(Name = "valueField")] string valueField,
+            [FromForm(Name = "value")] string value,
+            [FromForm(Name = "take")] int take)
         {
-            var dataSource = await this.context.DataSources.FindAsync(dataSourceId);
-            var source = sourceFactory.Create(dataSource);
+            var dataSource = JToken.Parse(dataSourceString);
+
+            var source = sourceFactory.Create(dataSource["name"].ToString(), dataSource["type"].ToString(), dataSource["data"]);
             query = $"select top {take} * from ({query}) {valueField}Tmp where {valueField} like '%{value}%'";
             var dataReader = dataReaderFactory.CreateSqlQueryDataSet(query, source);
 
