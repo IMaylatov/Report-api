@@ -5,6 +5,6 @@
 
     public interface IReportGenerator
     {
-        Stream Generate(JToken report, Stream template, JToken variables);
+        Stream Generate(JToken jReport, Stream template, JToken jVariableValues);
     }
 }

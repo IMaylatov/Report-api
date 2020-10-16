@@ -38,7 +38,7 @@
         public async Task<ActionResult<TemplateDto>> GetReportTemplateById(int reportId, int templateId)
         {
             var template = await this.context.Templates
-                .FirstOrDefaultAsync(x => x.Id == templateId);
+                .FirstOrDefaultAsync(x => x.Id == templateId && x.ReportId == reportId);
 
             return this.Ok(template.Adapt<TemplateDto>());
         }
@@ -48,7 +48,7 @@
             int reportId,
             [FromForm(Name = "template")] IFormFile data)
         {
-            if (this.context.Templates.Any(x => x.ReportId == reportId))
+            if (this.context.Templates.Any(x => x.ReportId == reportId && x.ReportId == reportId))
             {
                 return this.BadRequest();
             }
@@ -68,7 +68,7 @@
             [FromForm(Name = "template")] IFormFile data)
         {
             var template = await this.context.Templates
-                .FirstOrDefaultAsync(x => x.Id == templateId);
+                .FirstOrDefaultAsync(x => x.Id == templateId && x.ReportId == reportId);
 
             template.Data = GetBytesFromFile(data);
 

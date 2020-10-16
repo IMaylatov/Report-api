@@ -12,20 +12,18 @@
         public string Type { get; set; }
 
         public ICollection<Template> Templates { get; set; }
-        public List<ReportDataSource> ReportDataSources { get; set; }
-        public List<ReportDataSet> ReportDataSets { get; set; }
-        public List<ReportVariable> ReportVariables { get; set; }
+        public List<DataSource> DataSources { get; set; }
+        public List<DataSet> DataSets { get; set; }
+        public List<Variable> Variables { get; set; }
 
 
         public ReportDto AdaptToDto()
         {
             var reportDto = this.Adapt<ReportDto>();
 
-            reportDto.DataSources = this.ReportDataSources.Select(x => x.DataSource.AdaptToDto()).ToList();
-
-            reportDto.DataSets = this.ReportDataSets.Select(x => x.DataSet.AdaptToDto()).ToList();
-
-            reportDto.Variables = this.ReportVariables.Select(x => x.Variable.AdaptToDto()).ToList();
+            reportDto.DataSources = this.DataSources.Select(x => x.AdaptToDto()).ToList();
+            reportDto.DataSets = this.DataSets.Select(x => x.AdaptToDto()).ToList();
+            reportDto.Variables = this.Variables.Select(x => x.AdaptToDto()).ToList();
 
             return reportDto;
         }

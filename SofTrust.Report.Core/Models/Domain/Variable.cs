@@ -12,8 +12,9 @@
         public string Label { get; set; }
         public string Type { get; set; }
         public string Data { get; set; }
+        public int ReportId { get; set; }
 
-        public List<ReportVariable> ReportVariables { get; set; }
+        public Report Report { get; set; }
 
         internal VariableDto AdaptToDto()
         {

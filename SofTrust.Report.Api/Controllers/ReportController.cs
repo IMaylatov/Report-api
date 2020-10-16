@@ -35,9 +35,9 @@
         public async Task<ActionResult<ReportDto>> GetReportById(int id)
         {
             var report = await this.context.Reports
-                .Include(x => x.ReportDataSources).ThenInclude(x => x.DataSource)
-                .Include(x => x.ReportDataSets).ThenInclude(x => x.DataSet)
-                .Include(x => x.ReportVariables).ThenInclude(x => x.Variable)
+                .Include(x => x.DataSources)
+                .Include(x => x.DataSets)
+                .Include(x => x.Variables)
                 .FirstOrDefaultAsync(x => x.Id == id);
             if (report == null)
             {
@@ -49,8 +49,8 @@
         [HttpPost]
         public async Task<ActionResult<ReportDto>> CreateReport([FromBody] ReportDto reportDto)
         {
-            var report = reportDto.AdaptToDomain();
-            report = this.reportRepository.InsertGraph(report);
+            var report = reportDto.Adapt<Core.Models.Domain.Report>();
+            this.context.Reports.Add(report);
             await this.context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
@@ -60,7 +60,7 @@
         public async Task<ActionResult<ReportDto>> UpdateReport(int id, [FromBody] ReportDto reportDto)
         {
             var report = reportDto.AdaptToDomain();
-            report = this.reportRepository.UpdateGraph(report);
+            report = await reportRepository.UpdateGraphAsync(report);
             await this.context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, report.AdaptToDto());
@@ -69,12 +69,15 @@
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteReport(int id)
         {
-            if (! await context.Reports.AnyAsync(x => x.Id == id))
+            var report = await context.Reports
+                   .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (report == null)
             {
                 return NotFound();
             }
 
-            this.reportRepository.DeleteGraph(id);
+            context.Reports.Remove(report);
             await context.SaveChangesAsync();
 
             return this.Ok();

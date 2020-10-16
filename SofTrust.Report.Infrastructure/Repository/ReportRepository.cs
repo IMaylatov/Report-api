@@ -1,10 +1,10 @@
 ﻿namespace SofTrust.Report.Infrastructure.Repository
 {
-    using DocumentFormat.OpenXml.Office2010.ExcelAc;
     using Microsoft.EntityFrameworkCore;
     using SofTrust.Report.Core.Models.Domain;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
 
     public class ReportRepository
     {
@@ -15,147 +15,93 @@
             this.context = reportContext;
         }
 
-        public Report InsertGraph(Report report)
+        public async Task<Report> UpdateGraphAsync(Report report)
         {
-            this.context.Entry(report).State = EntityState.Added;
-
-            report.ReportDataSources.ForEach(x =>
-            {
-                this.context.Entry(x).State = EntityState.Added;
-            });
-
-            report.ReportDataSets.ForEach(x =>
-            {
-                this.context.Entry(x).State = EntityState.Added;
-                this.context.Entry(x.DataSet).State = EntityState.Added;
-            });
-
-            report.ReportVariables.ForEach(x =>
-            {
-                this.context.Entry(x).State = EntityState.Added;
-                this.context.Entry(x.Variable).State = EntityState.Added;
-            });
-
-            return report;
-        }
-
-        public Report UpdateGraph(Report report)
-        {
-            var existingReport = context.Reports
-                       .Include(x => x.ReportDataSources).ThenInclude(x => x.DataSource)
-                       .Include(x => x.ReportDataSets).ThenInclude(x => x.DataSet)
-                       .Include(x => x.ReportVariables).ThenInclude(x => x.Variable)
-                       .FirstOrDefault(x => x.Id == report.Id);
+            var existingReport = await context.Reports
+                       .Include(x => x.DataSources)
+                       .Include(x => x.DataSets)
+                       .Include(x => x.Variables)
+                       .FirstOrDefaultAsync(x => x.Id == report.Id);
 
             context.Entry(existingReport).CurrentValues.SetValues(report);
 
-            var addedReportDataSources = new List<ReportDataSource>();
-            foreach (var reportDataSource in report.ReportDataSources)
-            {
-                var existingReportDataSource = existingReport.ReportDataSources
-                    .FirstOrDefault(p => p.DataSourceId == reportDataSource.DataSourceId);
-
-                if (existingReportDataSource == null)
-                {
-                    addedReportDataSources.Add(reportDataSource);
-                }
-                else
-                {
-                    context.Entry(existingReportDataSource).CurrentValues.SetValues(reportDataSource);
-                    context.Entry(existingReportDataSource.DataSource).CurrentValues.SetValues(reportDataSource.DataSource);
-                }
-            }
-            existingReport.ReportDataSources.AddRange(addedReportDataSources);
-
-            var addedReportDataSets = new List<ReportDataSet>();
-            foreach (var reportDataSet in report.ReportDataSets)
-            {
-                var existingReportDataSet = existingReport.ReportDataSets
-                    .FirstOrDefault(p => p.DataSetId == reportDataSet.DataSetId);
-
-                if (existingReportDataSet == null)
-                {
-                    addedReportDataSets.Add(reportDataSet);
-                }
-                else
-                {
-                    context.Entry(existingReportDataSet).CurrentValues.SetValues(reportDataSet);
-                    context.Entry(existingReportDataSet.DataSet).CurrentValues.SetValues(reportDataSet.DataSet);
-                }
-            }
-            existingReport.ReportDataSets.AddRange(addedReportDataSets);
-
-            var addedVariables = new List<ReportVariable>();
-            foreach (var reportVariable in report.ReportVariables)
-            {
-                var existingReportVariable = existingReport.ReportVariables
-                    .FirstOrDefault(p => p.VariableId == reportVariable.VariableId);
-
-                if (existingReportVariable == null)
-                {
-                    addedVariables.Add(reportVariable);
-                }
-                else
-                {
-                    context.Entry(existingReportVariable).CurrentValues.SetValues(reportVariable);
-                    context.Entry(existingReportVariable.Variable).CurrentValues.SetValues(reportVariable.Variable);
-                }
-            }
-            existingReport.ReportVariables.AddRange(addedVariables);
-
-            foreach (var reportDataSources in existingReport.ReportDataSources)
-            {
-                if (!report.ReportDataSources.Any(p => p.DataSourceId == reportDataSources.DataSourceId))
-                {
-                    context.Remove(reportDataSources);
-                }
-            }
-            foreach (var reportDataSet in existingReport.ReportDataSets)
-            {
-                if (!report.ReportDataSets.Any(p => p.DataSetId == reportDataSet.DataSetId))
-                {
-                    context.Remove(reportDataSet.DataSet);
-                    context.Remove(reportDataSet);
-                }
-            }
-            foreach (var reportVariable in existingReport.ReportVariables)
-            {
-                if (!report.ReportVariables.Any(p => p.VariableId == reportVariable.VariableId))
-                {
-                    context.Remove(reportVariable.Variable);
-                    context.Remove(reportVariable);
-                }
-            }
+            UpdateDataSources(report, existingReport);
+            UpdateDataSets(report, existingReport);
+            UpdateVariables(report, existingReport);
 
             return report;
         }
 
-        public void DeleteGraph(int reportId)
+        private void UpdateDataSources(Report report, Report existingReport)
         {
-            var report = context.Reports
-                   .Include(x => x.ReportDataSources)
-                   .Include(x => x.ReportDataSets).ThenInclude(x => x.DataSet)
-                   .Include(x => x.ReportVariables).ThenInclude(x => x.Variable)
-                   .FirstOrDefault(x => x.Id == reportId);
-
-            this.context.Entry(report).State = EntityState.Deleted;
-
-            report.ReportDataSources.ForEach(x =>
+            foreach (var dataSource in report.DataSources)
             {
-                this.context.Entry(x).State = EntityState.Deleted;
-            });
+                var existingDataSource = existingReport.DataSources.FirstOrDefault(p => p.Id == dataSource.Id);
 
-            report.ReportDataSets.ForEach(x =>
+                if (existingDataSource == null)
+                {
+                    existingReport.DataSources.Add(dataSource);
+                }
+                else
+                {
+                    context.Entry(existingDataSource).CurrentValues.SetValues(dataSource);
+                }
+            }
+            foreach (var dataSource in existingReport.DataSources)
             {
-                this.context.Entry(x).State = EntityState.Deleted;
-                this.context.Entry(x.DataSet).State = EntityState.Deleted;
-            });
+                if (!report.DataSources.Any(p => p.Id == dataSource.Id))
+                {
+                    context.DataSources.Remove(dataSource);
+                }
+            }
+        }
 
-            report.ReportVariables.ForEach(x =>
+        private void UpdateDataSets(Report report, Report existingReport)
+        {
+            foreach (var dataSet in report.DataSets)
             {
-                this.context.Entry(x).State = EntityState.Deleted;
-                this.context.Entry(x.Variable).State = EntityState.Deleted;
-            });
+                var existingDataSet = existingReport.DataSets.FirstOrDefault(p => p.Id == dataSet.Id);
+
+                if (existingDataSet == null)
+                {
+                    existingReport.DataSets.Add(dataSet);
+                }
+                else
+                {
+                    context.Entry(existingDataSet).CurrentValues.SetValues(dataSet);
+                }
+            }
+            foreach (var dataSet in existingReport.DataSets)
+            {
+                if (!report.DataSets.Any(p => p.Id == dataSet.Id))
+                {
+                    context.Remove(dataSet);
+                }
+            }
+        }
+
+        private void UpdateVariables(Report report, Report existingReport)
+        {
+            foreach (var variable in report.Variables)
+            {
+                var existingVariable = existingReport.Variables.FirstOrDefault(p => p.Id == variable.Id);
+
+                if (existingVariable == null)
+                {
+                    existingReport.Variables.Add(variable);
+                }
+                else
+                {
+                    context.Entry(existingVariable).CurrentValues.SetValues(variable);
+                }
+            }
+            foreach (var variable in existingReport.Variables)
+            {
+                if (!report.Variables.Any(p => p.Id == variable.Id))
+                {
+                    context.Remove(variable);
+                }
+            }
         }
     }
 }

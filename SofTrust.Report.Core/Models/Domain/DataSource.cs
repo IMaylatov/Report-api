@@ -11,8 +11,9 @@
         public string Name { get; set; }
         public string Type { get; set; }
         public string Data { get; set; }
+        public int ReportId { get; set; }
 
-        public List<ReportDataSource> ReportDataSources { get; set; }
+        public Report Report { get; set; }
 
         public DataSourceDto AdaptToDto()
         {
