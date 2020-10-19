@@ -1,6 +1,7 @@
 ﻿namespace SofTrust.Report.Api.Controllers
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using Mapster;
     using Microsoft.AspNetCore.Mvc;
@@ -24,10 +25,15 @@
         }
         
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ListItemReportDto>>> GetReports()
+        public async Task<ActionResult<IEnumerable<ListItemReportDto>>> GetReports(string name = "")
         {
-            var reports = await this.context.Reports
-                .ToListAsync();
+            var queryReports = this.context.Reports.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                queryReports = queryReports.Where(x => EF.Functions.Like(x.Name.ToLower(), $"%{name.ToLower()}%"));
+            }
+
+            var reports = await queryReports.ToListAsync();
             return this.Ok(reports.Adapt<IEnumerable<ListItemReportDto>>());
         }
 
