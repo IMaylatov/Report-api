@@ -12,8 +12,10 @@
     using SofTrust.Report.Infrastructure;
     using SofTrust.Report.Core.Models.Dto;
     using SofTrust.Report.Core.Models.Domain;
+    using Microsoft.AspNetCore.Authorization;
 
     [Route("api/reports/{reportId}/templates")]
+    [Authorize]
     [ApiController]
     public class ReportTemplateController : ControllerBase
     {

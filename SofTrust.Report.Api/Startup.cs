@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Logging;
+using Microsoft.IdentityModel.Tokens;
 using SofTrust.Report.Core.Generator.DataReader;
 using SofTrust.Report.Core.Generator.Report;
 using SofTrust.Report.Core.Generator.Report.ClosedXml;
@@ -21,6 +23,8 @@ namespace SofTrust.Report.Api
             Configuration = configuration;
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            // Показывать ошибки IdentityServer
+            IdentityModelEventSource.ShowPII = true;
         }
 
         public IConfiguration Configuration { get; }
@@ -29,6 +33,26 @@ namespace SofTrust.Report.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc(options => options.EnableEndpointRouting = false).AddNewtonsoftJson();
+
+            services.AddAuthentication("Bearer")
+                .AddJwtBearer("Bearer", options =>
+                {
+                    options.Authority = "https://localhost:5001";
+
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateAudience = false
+                    };
+                });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("ApiScope", policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireClaim("scope", "softrust_report_api");
+                });
+            });
 
             services.AddEntityFrameworkNpgsql().AddDbContext<ReportContext>(opt =>
                 opt.UseNpgsql(Configuration.GetConnectionString("ReportConnection"))
@@ -45,7 +69,6 @@ namespace SofTrust.Report.Api
             services.AddScoped<ReportRepository, ReportRepository>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -53,7 +76,15 @@ namespace SofTrust.Report.Api
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseMvc();
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
     }
 }
