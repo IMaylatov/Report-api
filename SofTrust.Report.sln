@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SofTrust.Report.Core", "Sof
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SofTrust.Report.Infrastructure", "SofTrust.Report.Infrastructure\SofTrust.Report.Infrastructure.csproj", "{DCA52B48-8D24-42F6-897D-9CF9FDB06B63}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SofTrust.Report.Trs", "SofTrust.Report.Trs\SofTrust.Report.Trs.csproj", "{1F3C21E8-95EC-40C5-A0D7-A88A14EAB371}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{DCA52B48-8D24-42F6-897D-9CF9FDB06B63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCA52B48-8D24-42F6-897D-9CF9FDB06B63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCA52B48-8D24-42F6-897D-9CF9FDB06B63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F3C21E8-95EC-40C5-A0D7-A88A14EAB371}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F3C21E8-95EC-40C5-A0D7-A88A14EAB371}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F3C21E8-95EC-40C5-A0D7-A88A14EAB371}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F3C21E8-95EC-40C5-A0D7-A88A14EAB371}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

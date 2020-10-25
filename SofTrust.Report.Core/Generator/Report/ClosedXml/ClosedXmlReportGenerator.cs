@@ -21,11 +21,11 @@
             this.dataSetFactory = dataSetFactory;
         }
 
-        public override Stream Generate(JToken jReport, Stream bookStream, JToken jVariableValues)
+        public override Stream Generate(JToken jReport, Stream bookStream, string host, JToken jVariableValues)
         {
             var variables = this.GetVariables(jReport["variables"], jVariableValues);
 
-            var dataSources = jReport["dataSources"].ToDictionary(x => x["name"].ToString(), x => dataSourceFactory.Create(x));
+            var dataSources = jReport["dataSources"].ToDictionary(x => x["name"].ToString(), x => dataSourceFactory.Create(x, host));
 
             var dataSets = jReport["dataSets"].ToDictionary(x => x["name"].ToString(), x => dataSetFactory.Create(x, dataSources, variables));
 

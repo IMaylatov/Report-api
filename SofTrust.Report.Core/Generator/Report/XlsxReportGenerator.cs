@@ -7,7 +7,7 @@
 
     public abstract class XlsxReportGenerator : IReportGenerator
     {
-        public abstract Stream Generate(JToken report, Stream template, JToken jVariableValues);
+        public abstract Stream Generate(JToken report, Stream template, string host, JToken jVariableValues);
 
         protected IEnumerable<Variable> GetVariables(JToken jVariables, JToken jVariableValues)
         {

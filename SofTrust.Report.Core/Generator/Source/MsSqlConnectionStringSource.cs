@@ -3,13 +3,13 @@
     using SofTrust.Report.Core.Generator.Connection;
     using System.Data.SqlClient;
 
-    public class MsSqlSource : ISource
+    public class MsSqlConnectionStringSource : ISource
     {
         private readonly string connectionString;
 
         public string Name { get; set; }
 
-        public MsSqlSource(string connectionString)
+        public MsSqlConnectionStringSource(string connectionString)
         {
             this.connectionString = connectionString;
         }

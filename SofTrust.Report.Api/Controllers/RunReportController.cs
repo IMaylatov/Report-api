@@ -31,6 +31,7 @@
         public IActionResult Run(
             [FromForm(Name = "report")] string reportJson,
             [FromForm(Name = "template")] IFormFile template,
+            [FromForm(Name = "host")] string host,
             [FromForm(Name = "variableValues")] string variableValuesJson)
         {
             var report = JToken.Parse(reportJson);
@@ -39,13 +40,14 @@
             var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
             using (var templateStream = template.OpenReadStream())
             {
-                var reportStream = reportGenerator.Generate(report, templateStream, variableValues);
+                var reportStream = reportGenerator.Generate(report, templateStream, host, variableValues);
                 return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
             }
         }
 
         [HttpPost("{id}")]
         public async Task<IActionResult> Run(int id,
+            [FromForm(Name = "host")] string host,
             [FromForm(Name = "variableValues")] string variableValuesJson)
         {
             var variableValues = JToken.Parse(variableValuesJson);
@@ -63,7 +65,7 @@
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
 
             var reportGenerator = this.reportGeneratorFactory.Create(report.Type);
-            var reportStream = reportGenerator.Generate(reportJ, templateStream, variableValues);
+            var reportStream = reportGenerator.Generate(reportJ, templateStream, host, variableValues);
             return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
         }
     }

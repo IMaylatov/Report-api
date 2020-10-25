@@ -1,11 +1,11 @@
 ﻿namespace SofTrust.Report.Core.Generator.Source
 {
-    public class NpgsqlSource : ISource
+    public class NpgsqlConnectionStringSource : ISource
     {
         private readonly string connectionString;
         public string Name { get; set; }
 
-        public NpgsqlSource(string connectionString)
+        public NpgsqlConnectionStringSource(string connectionString)
         {
             this.connectionString = connectionString;
         }

@@ -5,7 +5,6 @@
     using SofTrust.Report.Core.Generator.DataAdapter;
     using SofTrust.Report.Core.Generator.DataReader;
     using SofTrust.Report.Core.Generator.Source;
-    using SofTrust.Report.Core.Models.Dto;
     using SofTrust.Report.Infrastructure;
     using System.Collections.Generic;
 
@@ -29,6 +28,7 @@
         [HttpPost("select/data")]
         public ActionResult<IEnumerable<object>> GetSelectData(
             [FromForm(Name = "dataSource")] string dataSourceString,
+            [FromForm(Name = "host")] string host,
             [FromForm(Name = "query")] string query,
             [FromForm(Name = "valueField")] string valueField,
             [FromForm(Name = "value")] string value,
@@ -36,7 +36,7 @@
         {
             var dataSource = JToken.Parse(dataSourceString);
 
-            var source = sourceFactory.Create(dataSource["name"].ToString(), dataSource["type"].ToString(), dataSource["data"]);
+            var source = sourceFactory.Create(dataSource["name"].ToString(), dataSource["type"].ToString(), dataSource["data"], host);
             query = $"select top {take} * from ({query}) {valueField}Tmp where {valueField} like '%{value}%'";
             var dataReader = dataReaderFactory.CreateSqlQueryDataSet(query, source);
 

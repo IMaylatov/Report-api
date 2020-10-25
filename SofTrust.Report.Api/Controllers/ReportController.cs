@@ -4,6 +4,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Mapster;
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.EntityFrameworkCore;
     using SofTrust.Report.Core.Models.Dto;
@@ -11,6 +12,7 @@
     using SofTrust.Report.Infrastructure.Repository;
 
     [Route("api/reports")]
+    [Authorize]
     [ApiController]
     public class ReportController : ControllerBase
     {

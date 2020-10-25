@@ -1,4 +1,11 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
+using SofTrust.Report.Api.Auth;
 using SofTrust.Report.Core.Generator.DataReader;
 using SofTrust.Report.Core.Generator.Report;
 using SofTrust.Report.Core.Generator.Report.ClosedXml;
@@ -13,6 +21,8 @@ using SofTrust.Report.Core.Generator.Report.Malibu;
 using SofTrust.Report.Core.Generator.Source;
 using SofTrust.Report.Infrastructure;
 using SofTrust.Report.Infrastructure.Repository;
+using SofTrust.Report.Trs;
+using Microsoft.EntityFrameworkCore.SqlServer;
 
 namespace SofTrust.Report.Api
 {
@@ -34,7 +44,7 @@ namespace SofTrust.Report.Api
         {
             services.AddMvc(options => options.EnableEndpointRouting = false).AddNewtonsoftJson();
 
-            services.AddAuthentication("Bearer")
+            services.AddAuthentication()
                 .AddJwtBearer("Bearer", options =>
                 {
                     options.Authority = "https://localhost:5001";
@@ -43,20 +53,25 @@ namespace SofTrust.Report.Api
                     {
                         ValidateAudience = false
                     };
-                });
+                })
+                .AddScheme<StHostAuthOptions, StHostAuthorizationHandler>("StHost", "StHost Auth", o => { });
 
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("ApiScope", policy =>
-                {
-                    policy.RequireAuthenticatedUser();
-                    policy.RequireClaim("scope", "softrust_report_api");
-                });
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .AddAuthenticationSchemes(
+                        JwtBearerDefaults.AuthenticationScheme,
+                        "StHost")
+                    .Build();
             });
 
             services.AddEntityFrameworkNpgsql().AddDbContext<ReportContext>(opt =>
                 opt.UseNpgsql(Configuration.GetConnectionString("ReportConnection"))
                     .UseSnakeCaseNamingConvention());
+
+            services.AddDbContext<TrsContext>(opt =>
+                opt.UseSqlServer(Configuration.GetConnectionString("TrsConnection")));
 
             services.AddScoped<ReportGeneratorFactory, ReportGeneratorFactory>();
 

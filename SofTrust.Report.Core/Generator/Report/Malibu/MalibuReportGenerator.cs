@@ -35,11 +35,11 @@
             this.dataSourceFactory = dataSourceFactory;
         }
 
-        public override Stream Generate(JToken jReport, Stream bookStream, JToken jVariableValues)
+        public override Stream Generate(JToken jReport, Stream bookStream, string host, JToken jVariableValues)
         {
             var variables = this.GetVariables(jReport["variables"], jVariableValues);
 
-            var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x));
+            var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x, host));
             var dataSource = dataSources.FirstOrDefault();
 
             var report = this.GetReport(bookStream);
