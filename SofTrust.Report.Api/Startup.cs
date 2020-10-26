@@ -23,6 +23,7 @@ using SofTrust.Report.Infrastructure;
 using SofTrust.Report.Infrastructure.Repository;
 using SofTrust.Report.Trs;
 using Microsoft.EntityFrameworkCore.SqlServer;
+using SofTrust.Report.Core.Generator.Source.Sql;
 
 namespace SofTrust.Report.Api
 {
@@ -79,6 +80,7 @@ namespace SofTrust.Report.Api
             services.AddScoped<MalibuReportGenerator, MalibuReportGenerator>();
 
             services.AddScoped<SourceFactory, SourceFactory>();
+            services.AddScoped<SqlSourceFactory, SqlSourceFactory>();
             services.AddScoped<DataReaderFactory, DataReaderFactory>();
 
             services.AddScoped<ReportRepository, ReportRepository>();

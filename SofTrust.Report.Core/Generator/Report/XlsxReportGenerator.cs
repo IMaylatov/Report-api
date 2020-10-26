@@ -7,11 +7,12 @@
 
     public abstract class XlsxReportGenerator : IReportGenerator
     {
-        public abstract Stream Generate(JToken report, Stream template, string host, JToken jVariableValues);
+        public abstract Stream Generate(JToken report, Stream template, JToken reportContext);
 
-        protected IEnumerable<Variable> GetVariables(JToken jVariables, JToken jVariableValues)
+        protected IEnumerable<Variable> GetVariables(JToken jVariables, JToken reportContext)
         {
-            var valueByNames = jVariableValues.Children().ToDictionary(x => x["name"].ToString(), x => x["value"]);
+            var valueByNames = JArray.Parse(reportContext["variableValues"].Value<string>())
+                .ToDictionary(x => x["name"].ToString(), x => x["value"]);
             var jVariablesWithValue = new JArray();
             foreach (var variable in jVariables)
             {

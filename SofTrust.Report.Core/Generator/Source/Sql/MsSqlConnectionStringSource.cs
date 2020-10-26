@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Core.Generator.Source
+﻿namespace SofTrust.Report.Core.Generator.Source.Sql
 {
     using SofTrust.Report.Core.Generator.Connection;
     using System.Data.SqlClient;
@@ -6,8 +6,6 @@
     public class MsSqlConnectionStringSource : ISource
     {
         private readonly string connectionString;
-
-        public string Name { get; set; }
 
         public MsSqlConnectionStringSource(string connectionString)
         {

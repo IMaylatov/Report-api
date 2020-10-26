@@ -1,4 +1,4 @@
-﻿namespace SofTrust.Report.Core.Generator.Source
+﻿namespace SofTrust.Report.Core.Generator.Source.Sql
 {
     public class NpgsqlConnectionStringSource : ISource
     {

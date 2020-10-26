@@ -35,22 +35,21 @@
             this.dataSourceFactory = dataSourceFactory;
         }
 
-        public override Stream Generate(JToken jReport, Stream bookStream, string host, JToken jVariableValues)
+        public override Stream Generate(JToken jReport, Stream bookStream, JToken reportContext)
         {
-            var variables = this.GetVariables(jReport["variables"], jVariableValues);
+            var dataSource = dataSourceFactory.Create(jReport["dataSources"].FirstOrDefault(), reportContext);
 
-            var dataSources = jReport["dataSources"].Select(x => dataSourceFactory.Create(x, host));
-            var dataSource = dataSources.FirstOrDefault();
+            var variables = this.GetVariables(jReport["variables"], reportContext);
 
-            var report = this.GetReport(bookStream);
+            var report = new XmlSerializer(typeof(Report)).Deserialize(bookStream) as Report;
             var reportDesc = report.DeserializeReportDesc();
-            var reportBook = report.DeserializeReportTemplate();
-
-            var dataSets = reportDesc.DATASET.ToDictionary(x => x.NAME, x => new SqlQueryDataReader(dataSource, x.SQL, variables, timeout) as IDataReader);
+            var dataSets = reportDesc.DATASET
+                .ToDictionary(x => x.NAME, x => new SqlQueryDataReader(dataSource, x.SQL, variables, timeout) as IDataReader);
 
             var datas = dataSets
                .ToDictionary(x => x.Key.ToLower(), x => x.Value.GetData().ToListDictionaryAdapt());
 
+            var reportBook = report.DeserializeReportTemplate();
             FillBookData(variables, datas, reportBook, reportDesc.DATASET);
 
             var reportStream = new MemoryStream();
@@ -58,12 +57,6 @@
             reportStream.Position = 0;
 
             return reportStream;
-        }
-
-        private Report GetReport(Stream template)
-        {
-            var serializer = new XmlSerializer(typeof(Report));
-            return serializer.Deserialize(template) as Report;
         }
 
         private void FillBookData(IEnumerable<Variable> parameters, Dictionary<string, List<Dictionary<string, object>>> datas, XLWorkbook book, MAINDATASET[] dataSetDescs)

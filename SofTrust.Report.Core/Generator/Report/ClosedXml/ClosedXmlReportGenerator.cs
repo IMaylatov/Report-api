@@ -21,20 +21,20 @@
             this.dataSetFactory = dataSetFactory;
         }
 
-        public override Stream Generate(JToken jReport, Stream bookStream, string host, JToken jVariableValues)
+        public override Stream Generate(JToken jReport, Stream bookStream, JToken reportContext)
         {
-            var variables = this.GetVariables(jReport["variables"], jVariableValues);
+            var dataSources = jReport["dataSources"]
+                .ToDictionary(x => x["name"].ToString(), x => dataSourceFactory.Create(x, reportContext));
 
-            var dataSources = jReport["dataSources"].ToDictionary(x => x["name"].ToString(), x => dataSourceFactory.Create(x, host));
+            var variables = this.GetVariables(jReport["variables"], reportContext);
 
-            var dataSets = jReport["dataSets"].ToDictionary(x => x["name"].ToString(), x => dataSetFactory.Create(x, dataSources, variables));
+            var dataSets = jReport["dataSets"]
+                .ToDictionary(x => x["name"].ToString(), x => dataSetFactory.Create(x, dataSources, variables));
 
             var datas = dataSets
                .ToDictionary(x => x.Key.ToLower(), x => x.Value.GetData().ToListDictionaryAdapt());
 
-            var reportStream = this.GenerateClosedXmlReport(bookStream, datas);
-
-            return reportStream;
+            return this.GenerateClosedXmlReport(bookStream, datas);
         }
 
         private Stream GenerateClosedXmlReport(Stream bookStream, Dictionary<string, List<Dictionary<string, object>>> datas)

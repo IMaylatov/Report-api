@@ -12,15 +12,12 @@
     [ApiController]
     public class VariableTypes : ControllerBase
     {
-        private readonly ReportContext context;
         private readonly SourceFactory sourceFactory;
         private readonly DataReaderFactory dataReaderFactory;
 
-        public VariableTypes(ReportContext reportContext,
-            SourceFactory sourceFactory,
+        public VariableTypes(SourceFactory sourceFactory,
             DataReaderFactory dataReaderFactory)
         {
-            this.context = reportContext;
             this.sourceFactory = sourceFactory;
             this.dataReaderFactory = dataReaderFactory;
         }
@@ -28,16 +25,14 @@
         [HttpPost("select/data")]
         public ActionResult<IEnumerable<object>> GetSelectData(
             [FromForm(Name = "dataSource")] string dataSourceString,
-            [FromForm(Name = "host")] string host,
-            [FromForm(Name = "query")] string query,
-            [FromForm(Name = "valueField")] string valueField,
-            [FromForm(Name = "value")] string value,
-            [FromForm(Name = "take")] int take)
+            [FromForm(Name = "context")] string contextJson,
+            [FromForm(Name = "query")] string query)
         {
             var dataSource = JToken.Parse(dataSourceString);
+            var reportContext = JToken.Parse(contextJson);
 
-            var source = sourceFactory.Create(dataSource["name"].ToString(), dataSource["type"].ToString(), dataSource["data"], host);
-            query = $"select top {take} * from ({query}) {valueField}Tmp where {valueField} like '%{value}%'";
+            var source = sourceFactory.Create(dataSource, reportContext);
+
             var dataReader = dataReaderFactory.CreateSqlQueryDataSet(query, source);
 
             return dataReader.GetData().ToListDictionaryAdapt();

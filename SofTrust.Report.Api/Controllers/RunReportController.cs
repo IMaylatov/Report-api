@@ -9,7 +9,6 @@
     using SofTrust.Report.Infrastructure;
     using System.IO;
     using System.Linq;
-    using System.Text.Json;
     using System.Threading.Tasks;
 
     [Route("api/run/report")]
@@ -31,27 +30,21 @@
         public IActionResult Run(
             [FromForm(Name = "report")] string reportJson,
             [FromForm(Name = "template")] IFormFile template,
-            [FromForm(Name = "host")] string host,
-            [FromForm(Name = "variableValues")] string variableValuesJson)
+            [FromForm(Name = "context")] string contextJson)
         {
-            var report = JToken.Parse(reportJson);
-            var variableValues = JToken.Parse(variableValuesJson);
-
-            var reportGenerator = this.reportGeneratorFactory.Create(report["type"].ToString());
+            var reportToken = JToken.Parse(reportJson);
             using (var templateStream = template.OpenReadStream())
             {
-                var reportStream = reportGenerator.Generate(report, templateStream, host, variableValues);
-                return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
+                var reportContext = JToken.Parse(contextJson);
+
+                return Run(reportToken, templateStream, reportContext);
             }
         }
 
         [HttpPost("{id}")]
         public async Task<IActionResult> Run(int id,
-            [FromForm(Name = "host")] string host,
-            [FromForm(Name = "variableValues")] string variableValuesJson)
+            [FromForm(Name = "context")] string contextJson)
         {
-            var variableValues = JToken.Parse(variableValuesJson);
-
             var report = await this.context.Reports
                 .Include(x => x.DataSources)
                 .Include(x => x.DataSets)
@@ -59,13 +52,19 @@
                 .Include(x => x.Templates)
                 .FirstOrDefaultAsync(x => x.Id == id);
             var reportDto = report.AdaptToDto();
-            var serializer = new Newtonsoft.Json.JsonSerializer();
-            serializer.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            var reportJ = JToken.FromObject(reportDto, serializer);
+            var reportToken = JToken.FromObject(reportDto, 
+                new Newtonsoft.Json.JsonSerializer() { ContractResolver = new CamelCasePropertyNamesContractResolver() });
             var templateStream = new MemoryStream(report.Templates.FirstOrDefault().Data);
+            var reportContext = JToken.Parse(contextJson);
 
-            var reportGenerator = this.reportGeneratorFactory.Create(report.Type);
-            var reportStream = reportGenerator.Generate(reportJ, templateStream, host, variableValues);
+            return Run(reportToken, templateStream, reportContext);
+        }
+
+        private IActionResult Run(JToken reportToken, Stream templateStream, JToken reportContext)
+        {
+            var reportGenerator = this.reportGeneratorFactory.Create(reportToken["type"].ToString());
+
+            var reportStream = reportGenerator.Generate(reportToken, templateStream, reportContext);
             return new FileStreamResult(reportStream, "application/octet-stream") { FileDownloadName = $"report.xlsx" };
         }
     }
