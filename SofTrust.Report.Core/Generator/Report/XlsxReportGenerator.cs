@@ -11,7 +11,7 @@
 
         protected IEnumerable<Variable> GetVariables(JToken jVariables, JToken reportContext)
         {
-            var valueByNames = JArray.Parse(reportContext["variableValues"].Value<string>())
+            var valueByNames = reportContext["variableValues"].Children()
                 .ToDictionary(x => x["name"].ToString(), x => x["value"]);
             var jVariablesWithValue = new JArray();
             foreach (var variable in jVariables)
