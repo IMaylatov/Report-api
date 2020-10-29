@@ -13,6 +13,7 @@
         public DbSet<DataSource> DataSources { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Template> Templates { get; set; }
+        public DbSet<User> Users { get; set; }
         public DbSet<Variable> Variables { get; set; }
     }
 }
